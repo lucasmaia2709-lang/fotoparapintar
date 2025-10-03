@@ -198,27 +198,46 @@ coloringCanvas.addEventListener('click',function(e){
 });
 
 function floodFill(ctx,startX,startY,fillColor){
-  const w=ctx.canvas.width,h=ctx.canvas.height;
-  const img=ctx.getImageData(0,0,w,h);
-  const data=img.data;
-  const stack=[[startX,startY]];
-  const targetColor=getPixel(data,startX,startY,w);
-  const fillCol=hexToRgb(fillColor);
+  const w = ctx.canvas.width, h = ctx.canvas.height;
+  const img = ctx.getImageData(0,0,w,h);
+  const data = img.data;
+  const stack = [[startX,startY]];
+  const targetColor = getPixel(data,startX,startY,w);
+  const fillCol = hexToRgb(fillColor);
   if(colorsMatch(targetColor,fillCol)) return;
+  
   while(stack.length>0){
-    const [x,y]=stack.pop(); let idx=(y*w+x)*4;
-    const col=getPixel(data,x,y,w); if(!colorsMatch(col,targetColor)) continue;
+    const [x,y] = stack.pop();
+    if(x<0 || x>=w || y<0 || y>=h) continue;
+    let idx = (y*w+x)*4;
+    const col = [data[idx], data[idx+1], data[idx+2], data[idx+3]];
+    if(!colorsMatch(col,targetColor)) continue;
     setPixel(data,x,y,fillCol);
-    if(x>0) stack.push([x-1,y]); if(x<w-1) stack.push([x+1,y]);
-    if(y>0) stack.push([x,y-1]); if(y<h-1) stack.push([x,y+1]);
+    stack.push([x+1,y],[x-1,y],[x,y+1],[x,y-1]);
   }
   ctx.putImageData(img,0,0);
 }
-function getPixel(data,x,y,w){const i=(y*w+x)*4;return[data[i],data[i+1],data[i+2],data[i+3]];}
-function setPixel(data,x,y,[r,g,b,a]){const i=(y*coloringCanvas.width+x)*4;data[i]=r;data[i+1]=g;data[i+2]=b;data[i+3]=255;}
-function colorsMatch(c1,c2){return c1[0]===c2[0]&&c1[1]===c2[1]&&c1[2]===c2[2];}
-function hexToRgb(hex){const bigint=parseInt(hex.replace('#',''),16);return[(bigint>>16)&255,(bigint>>8)&255,bigint&255,255];}
 
+function getPixel(data,x,y,w){
+  const i=(y*w+x)*4;
+  return [data[i],data[i+1],data[i+2],data[i+3]];
+}
+
+function setPixel(data,x,y,[r,g,b,a]){
+  const i=(y*coloringCanvas.width+x)*4;
+  data[i]=r; data[i+1]=g; data[i+2]=b; data[i+3]=255;
+}
+
+function colorsMatch(c1,c2){
+  return c1[0]===c2[0] && c1[1]===c2[1] && c1[2]===c2[2];
+}
+
+function hexToRgb(hex){
+  hex = hex.replace('#','');
+  if(hex.length!==6) hex='FF0000'; // cor padrão vermelha se inválida
+  const bigint = parseInt(hex,16);
+  return [(bigint>>16)&255,(bigint>>8)&255, bigint&255, 255];
+}
 // --- UI ---
 function showApp(){authSection.classList.add('hidden'); appContent.classList.remove('hidden'); updateCreditsDisplay();}
 function showAuth(){appContent.classList.add('hidden'); authSection.classList.remove('hidden');}
