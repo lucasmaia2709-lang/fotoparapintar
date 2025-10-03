@@ -90,7 +90,7 @@ body { font-family: 'Baloo 2', cursive; background-color: #f0f9ff; }
 <script>
 const CLOUDFLARE_WORKER_URL = 'https://fotoparapintar.lucasabreucotefis.workers.dev';
 
-// --- LOGIN / REGISTO / LOGOUT ---
+// --- ELEMENTOS ---
 const authSection = document.getElementById('auth-section');
 const appContent = document.getElementById('app-content');
 const loginForm = document.getElementById('login-form');
@@ -105,144 +105,161 @@ const originalImageContainer = document.getElementById('original-image-container
 const generatedImageContainer = document.getElementById('generated-image-container');
 const errorMessageDiv = document.getElementById('error-message');
 const generateButton = document.getElementById('generate-button');
+const colorButton = document.getElementById('color-button');
+const colorPalette = document.getElementById('color-palette');
 
 let currentUser = null;
 let lastBase64Image = null;
+let selectedColor = null;
+let coloringCanvas = null;
+let ctx = null;
 
+// --- CARREGAR PÁGINA ---
 window.addEventListener('load', () => {
   currentUser = JSON.parse(localStorage.getItem('currentUser'));
-  if(currentUser) showApp(); else showAuth();
+  if (currentUser) showApp(); else showAuth();
 });
 
-authToggleLink.addEventListener('click', (e)=>{
+// --- TOGGLE LOGIN/REGISTRO ---
+authToggleLink.addEventListener('click', e => {
   e.preventDefault();
   const isLoginVisible = !loginForm.classList.contains('hidden');
-  loginForm.classList.toggle('hidden',isLoginVisible);
-  registerForm.classList.toggle('hidden',!isLoginVisible);
-  authToggleLink.textContent = isLoginVisible?'Já tem uma conta? Entre aqui.':'Não tem uma conta? Registe-se aqui.';
-  authError.textContent='';
+  loginForm.classList.toggle('hidden', isLoginVisible);
+  registerForm.classList.toggle('hidden', !isLoginVisible);
+  authToggleLink.textContent = isLoginVisible ? 'Já tem uma conta? Entre aqui.' : 'Não tem uma conta? Registe-se aqui.';
+  authError.textContent = '';
 });
 
-registerForm.addEventListener('submit', e=>{ e.preventDefault(); handleAuth('register','register-email','register-password'); });
-loginForm.addEventListener('submit', e=>{ e.preventDefault(); handleAuth('login','login-email','login-password'); });
+// --- LOGIN / REGISTRO ---
+registerForm.addEventListener('submit', e => { e.preventDefault(); handleAuth('register','register-email','register-password'); });
+loginForm.addEventListener('submit', e => { e.preventDefault(); handleAuth('login','login-email','login-password'); });
 
 async function handleAuth(endpoint,emailId,passwordId){
-  authError.textContent='';
-  const email=document.getElementById(emailId).value.trim();
-  const password=document.getElementById(passwordId).value;
-  try{
-    const res=await fetch(`${CLOUDFLARE_WORKER_URL}/${endpoint}`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({email,password})
+  authError.textContent = '';
+  const email = document.getElementById(emailId).value.trim();
+  const password = document.getElementById(passwordId).value;
+  try {
+    const res = await fetch(`${CLOUDFLARE_WORKER_URL}/${endpoint}`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({email,password})
     });
-    const data=await res.json();
+    const data = await res.json();
     if(!res.ok) throw new Error(data.error||`Erro no ${endpoint}`);
-    if(endpoint==='register'){ alert('Conta criada com sucesso! Faça login.'); authToggleLink.click(); return; }
-    currentUser={email,credits:data.credits};
-    localStorage.setItem('currentUser',JSON.stringify(currentUser));
+    if(endpoint==='register'){ alert('Conta criada! Faça login.'); authToggleLink.click(); return; }
+    currentUser = { email, credits: data.credits };
+    localStorage.setItem('currentUser', JSON.stringify(currentUser));
     showApp();
-  }catch(err){ authError.textContent=err.message; }
+  } catch(err){ authError.textContent = err.message; }
 }
 
-logoutButton.addEventListener('click', ()=>{
-  currentUser=null; localStorage.removeItem('currentUser'); showAuth();
-  resultsSection.classList.add('hidden'); originalImageContainer.innerHTML=''; generatedImageContainer.innerHTML='<p class="text-gray-500">Aguardando a sua foto...</p>'; generateButton.classList.add('hidden'); imageUpload.value='';
+// --- LOGOUT ---
+logoutButton.addEventListener('click', () => {
+  currentUser = null;
+  localStorage.removeItem('currentUser');
+  showAuth();
+  resultsSection.classList.add('hidden');
+  originalImageContainer.innerHTML = '';
+  generatedImageContainer.innerHTML = '<p class="text-gray-500">Aguardando a sua foto...</p>';
+  generateButton.classList.add('hidden');
+  imageUpload.value = '';
 });
 
-// --- UPLOAD / REDIMENSIONAR ---
-imageUpload.addEventListener('change', async ev=>{
-  const file=ev.target.files[0]; if(!file) return;
-  const previewUrl=await fileToBase64(file);
-  originalImageContainer.innerHTML=`<img src="${previewUrl}" alt="Foto Original">`;
+// --- UPLOAD ---
+imageUpload.addEventListener('change', async ev => {
+  const file = ev.target.files[0]; if(!file) return;
+  const previewUrl = await fileToBase64(file);
+  originalImageContainer.innerHTML = `<img src="${previewUrl}" alt="Foto Original">`;
   resultsSection.classList.remove('hidden'); generateButton.classList.remove('hidden');
-  generatedImageContainer.innerHTML='<p class="text-gray-500">Pronto para transformar!</p>';
-  const resized=await resizeImageFile(file,1024); lastBase64Image=resized;
+  generatedImageContainer.innerHTML = '<p class="text-gray-500">Pronto para transformar!</p>';
+  const resized = await resizeImageFile(file,1024);
+  lastBase64Image = resized;
 });
 
-generateButton.addEventListener('click', async ()=>{
+// --- GERAR DESENHO ---
+generateButton.addEventListener('click', async () => {
   errorMessageDiv.textContent='';
   if(!currentUser){ errorMessageDiv.textContent='Faça login.'; return; }
   if(!lastBase64Image){ errorMessageDiv.textContent='Anexe uma foto.'; return; }
-  const { dataUrl,mimeType }=lastBase64Image;
-  const base64data=dataUrl.split(',')[1];
-  const payload={imageData:base64data,mimeType,userEmail:currentUser.email};
-  generatedImageContainer.innerHTML='<div class="loader"></div>'; generateButton.disabled=true;
+  const { dataUrl, mimeType } = lastBase64Image;
+  const base64data = dataUrl.split(',')[1];
+  const payload = { imageData: base64data, mimeType, userEmail: currentUser.email };
+  generatedImageContainer.innerHTML='<div class="loader"></div>';
+  generateButton.disabled = true;
   try{
-    const resp=await fetch(`${CLOUDFLARE_WORKER_URL}/generate-image`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    const data=await resp.json();
+    const resp = await fetch(`${CLOUDFLARE_WORKER_URL}/generate-image`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+    const data = await resp.json();
     if(!resp.ok) throw new Error(data.error||'Erro ao gerar a imagem');
-    // Mostrar imagem gerada
     enableColoring(data.imageBase64);
-    currentUser.credits=data.credits;
+    currentUser.credits = data.credits;
     localStorage.setItem('currentUser',JSON.stringify(currentUser));
     updateCreditsDisplay();
-  }catch(err){ generatedImageContainer.innerHTML=`<p class="text-red-600 font-bold">${err.message}</p>`; }
-  finally{ generateButton.disabled=false; }
+  } catch(err){
+    generatedImageContainer.innerHTML = `<p class="text-red-600 font-bold">${err.message}</p>`;
+  } finally{ generateButton.disabled=false; }
 });
 
-// --- FUNÇÕES ---
+// --- FUNÇÕES UTILITÁRIAS ---
 function showApp(){ authSection.classList.add('hidden'); appContent.classList.remove('hidden'); updateCreditsDisplay(); }
 function showAuth(){ appContent.classList.add('hidden'); authSection.classList.remove('hidden'); }
 function updateCreditsDisplay(){ creditsDisplay.textContent=currentUser?`Créditos: ${currentUser.credits}`:''; }
-function fileToBase64(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(file);});}
-async function resizeImageFile(file,maxDimension=1024){const dataUrl=await fileToBase64(file);return new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>{let {width,height}=img;if(width>maxDimension||height>maxDimension){if(width>height){height=Math.round((height*maxDimension)/width);width=maxDimension;}else{width=Math.round((width*maxDimension)/height);height=maxDimension;}}const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,width,height);const mimeType=file.type==='image/png'?'image/png':'image/jpeg';resolve({dataUrl:canvas.toDataURL(mimeType,0.92),mimeType});};img.onerror=reject;img.src=dataUrl;});}
+function fileToBase64(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file);});}
+async function resizeImageFile(file,maxDimension=1024){const dataUrl=await fileToBase64(file);return new Promise((res,rej)=>{const img=new Image();img.onload=()=>{let w=img.width,h=img.height;if(w>maxDimension||h>maxDimension){if(w>h){h=Math.round(h*maxDimension/w);w=maxDimension;}else{w=Math.round(w*maxDimension/h);h=maxDimension;}}const c=document.createElement('canvas');c.width=w;c.height=h;const cx=c.getContext('2d');cx.drawImage(img,0,0,w,h);const type=file.type==='image/png'?'image/png':'image/jpeg';res({dataUrl:c.toDataURL(type,0.92),mimeType:type});};img.onerror=rej;img.src=dataUrl;});}
 
 // --- COLORIR ---
-const colorButton = document.getElementById('color-button');
-const colorPalette = document.getElementById('color-palette');
-let selectedColor=null;
-let coloringCanvas=null;
-let ctx=null;
-
 function enableColoring(base64Img){
   colorButton.classList.remove('hidden');
-  colorButton.onclick=()=>{colorPalette.classList.toggle('hidden');};
-  document.querySelectorAll('.color-swatch').forEach(swatch=>{swatch.onclick=()=>{selectedColor=swatch.dataset.color;colorPalette.classList.add('hidden');};});
-  const img=new Image();
-  img.onload=()=>{
-    coloringCanvas=document.createElement('canvas');
-    coloringCanvas.width=img.width;
-    coloringCanvas.height=img.height;
-    ctx=coloringCanvas.getContext('2d');
+  colorButton.onclick = ()=> colorPalette.classList.toggle('hidden');
+  document.querySelectorAll('.color-swatch').forEach(swatch=>{ swatch.onclick=()=>{ selectedColor=swatch.dataset.color; colorPalette.classList.add('hidden'); }; });
+  const img = new Image();
+  img.onload = ()=>{
+    coloringCanvas = document.createElement('canvas');
+    coloringCanvas.width = img.width;
+    coloringCanvas.height = img.height;
+    ctx = coloringCanvas.getContext('2d');
     ctx.drawImage(img,0,0);
     generatedImageContainer.innerHTML=''; generatedImageContainer.appendChild(coloringCanvas);
     coloringCanvas.addEventListener('click', e=>{
       if(!selectedColor) return;
-      const rect=coloringCanvas.getBoundingClientRect();
-      const x=Math.floor((e.clientX-rect.left)*(coloringCanvas.width/rect.width));
-      const y=Math.floor((e.clientY-rect.top)*(coloringCanvas.height/rect.height));
+      const rect = coloringCanvas.getBoundingClientRect();
+      const x = Math.floor((e.clientX-rect.left)*(coloringCanvas.width/rect.width));
+      const y = Math.floor((e.clientY-rect.top)*(coloringCanvas.height/rect.height));
       floodFill(x,y,selectedColor);
     });
   };
   img.src=`data:image/png;base64,${base64Img}`;
 }
 
-function floodFill(startX,startY,fillColor){
-  const imgData=ctx.getImageData(0,0,coloringCanvas.width,coloringCanvas.height);
-  const data=imgData.data;
-  const width=coloringCanvas.width;
-  const height=coloringCanvas.height;
-  const pixelStack=[[startX,startY]];
-  const color=hexToRgba(fillColor);
-  const targetIdx=(startY*width+startX)*4;
-  const targetColor=[data[targetIdx],data[targetIdx+1],data[targetIdx+2],data[targetIdx+3]];
+function floodFill(sx,sy,fillColor){
+  const imgData = ctx.getImageData(0,0,coloringCanvas.width,coloringCanvas.height);
+  const data = imgData.data;
+  const width = coloringCanvas.width;
+  const height = coloringCanvas.height;
+  const stack = [[sx,sy]];
+  const targetIdx = (sy*width+sx)*4;
+  const targetColor = [data[targetIdx],data[targetIdx+1],data[targetIdx+2],data[targetIdx+3]];
+  const color = hexToRgba(fillColor);
   if(colorsMatch(targetColor,color)) return;
-  while(pixelStack.length){
-    const [x,y]=pixelStack.pop();
-    const idx=(y*width+x)*4;
+  while(stack.length){
+    const [x,y] = stack.pop();
+    const idx = (y*width+x)*4;
     if(!colorsMatch([data[idx],data[idx+1],data[idx+2],data[idx+3]],targetColor)) continue;
     data[idx]=color[0]; data[idx+1]=color[1]; data[idx+2]=color[2]; data[idx+3]=color[3];
-    if(x>0) pixelStack.push([x-1,y]);
-    if(x<width-1) pixelStack.push([x+1,y]);
-    if(y>0) pixelStack.push([x,y-1]);
-    if(y<height-1) pixelStack.push([x,y+1]);
+    if(x>0) stack.push([x-1,y]);
+    if(x<width-1) stack.push([x+1,y]);
+    if(y>0) stack.push([x,y-1]);
+    if(y<height-1) stack.push([x,y+1]);
   }
   ctx.putImageData(imgData,0,0);
 }
 
-function hexToRgba(hex){let c=hex.replace('#','');return [parseInt(c.substr(0,2),16),parseInt(c.substr(2,2),16),parseInt(c.substr(4,2),16),255];}
+function hexToRgba(hex){ let c=hex.replace('#',''); return [parseInt(c.substr(0,2),16),parseInt(c.substr(2,2),16),parseInt(c.substr(4,2),16),255]; }
 function colorsMatch(a,b){return a[0]===b[0] && a[1]===b[1] && a[2]===b[2] && a[3]===b[3];}
 </script>
+
 </body>
 </html>
