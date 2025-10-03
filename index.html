@@ -1,168 +1,168 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="pt">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Desenho para Colorir</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;700&display=swap" rel="stylesheet">
-<style>
-body { font-family: 'Baloo 2', cursive; background-color: #f0f9ff; }
-.loader { border: 4px solid #fde68a; border-top: 4px solid #38bdf8; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-.image-container img, #coloring-canvas { max-width: 100%; height: auto; border-radius: 1rem; object-fit: contain; display: block; margin: 0 auto; }
-.color-palette { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; background: #ffffffaa; padding: 8px; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.2); }
-.color-btn { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 2px solid #fff; transition: transform 0.2s; }
-.color-btn:hover { transform: scale(1.2); }
-#color-button { position: fixed; bottom: 20px; right: 20px; background:#38bdf8; color:white; padding:10px 16px; border-radius:8px; font-weight:bold; cursor:pointer; z-index:10; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Desenhos para Colorir</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Baloo 2', cursive; background-color: #f0f9ff; }
+    .loader { border: 4px solid #fde68a; border-top: 4px solid #38bdf8; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+    @keyframes spin { 0%{transform:rotate(0deg);}100%{transform:rotate(360deg);} }
+    .image-container img { max-height: 400px; width: auto; max-width: 100%; border-radius: 1rem; object-fit: contain; }
+    .main-container { transition: all 0.5s ease-in-out; }
+    #color-palette { gap: 0.25rem; }
+  </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
 
 <main class="main-container bg-white p-6 sm:p-8 rounded-2xl shadow-2xl max-w-4xl w-full">
 
-<!-- Autenticação -->
-<div id="auth-section">
-  <div class="text-center">
-    <h1 class="text-3xl sm:text-4xl font-bold text-sky-500">Bem-vindo! ✨</h1>
-    <p class="text-gray-600 mt-2">Crie a sua conta ou faça login.</p>
-    <div id="auth-form-container" class="mt-6 max-w-sm mx-auto">
-      <form id="login-form">
-        <input type="email" id="login-email" placeholder="O seu email" required class="shadow-sm border-2 rounded-full w-full py-3 px-6 text-center mb-4 focus:ring-2 focus:ring-sky-400 outline-none">
-        <input type="password" id="login-password" placeholder="A sua palavra-passe" required class="shadow-sm border-2 rounded-full w-full py-3 px-6 text-center mb-6 focus:ring-2 focus:ring-sky-400 outline-none">
-        <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-full font-bold text-lg transition-transform transform hover:scale-105">Entrar</button>
-      </form>
-      <form id="register-form" class="hidden">
-        <input type="email" id="register-email" placeholder="O seu email" required class="shadow-sm border-2 rounded-full w-full py-3 px-6 text-center mb-4 focus:ring-2 focus:ring-sky-400 outline-none">
-        <input type="password" id="register-password" placeholder="Crie uma palavra-passe" required class="shadow-sm border-2 rounded-full w-full py-3 px-6 text-center mb-6 focus:ring-2 focus:ring-sky-400 outline-none">
-        <button type="submit" class="w-full bg-sky-500 hover:bg-sky-600 text-white py-3 rounded-full font-bold text-lg transition-transform transform hover:scale-105">Criar Conta</button>
-      </form>
-    </div>
-    <p class="text-sm text-gray-500 mt-4">
-      <a href="#" id="auth-toggle-link" class="text-sky-600 hover:underline">Não tem uma conta? Registe-se aqui.</a>
-    </p>
-    <p id="auth-error" class="text-red-500 mt-4 font-semibold h-5"></p>
-  </div>
-</div>
-
-<!-- App -->
-<div id="app-content" class="hidden">
-  <div class="text-center mb-8 relative">
-    <div class="absolute top-0 right-0 -mt-4 -mr-4 sm:-mt-6 sm:-mr-6">
-      <span id="credits-display" class="font-bold text-lg text-green-600 bg-white px-3 py-1 rounded-full shadow-md"></span>
-      <button id="logout-button" class="ml-2 text-gray-400 hover:text-red-500 font-bold" title="Sair">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-      </button>
-    </div>
-    <h1 class="text-3xl sm:text-4xl font-bold text-sky-600">Desenhos para Colorir! 🎨</h1>
-    <p class="text-gray-600 mt-2 text-lg">Transforme qualquer foto numa página para colorir!</p>
-  </div>
-
-  <div class="flex justify-center mb-6">
-    <label for="image-upload" class="bg-yellow-400 hover:bg-yellow-500 text-yellow-900 py-3 px-8 rounded-full cursor-pointer font-bold text-lg transition-transform transform hover:scale-105">
-      Anexar Foto
-    </label>
-    <input type="file" id="image-upload" accept="image/*" class="hidden">
-  </div>
-
-  <div id="results" class="grid grid-cols-1 md:grid-cols-2 gap-8 hidden">
+  <!-- AUTH -->
+  <div id="auth-section">
     <div class="text-center">
-      <h2 class="text-2xl font-semibold mb-3">A Sua Foto Original</h2>
-      <div id="original-image-container" class="image-container bg-sky-100 min-h-[250px] flex items-center justify-center rounded-2xl p-2 shadow-inner"></div>
+      <h1 class="text-3xl sm:text-4xl font-bold text-sky-500">Bem-vindo! ✨</h1>
+      <p class="text-gray-600 mt-2">Crie a sua conta ou faça login para começar.</p>
+      <div id="auth-form-container" class="mt-6 max-w-sm mx-auto">
+        <form id="login-form">
+          <input type="email" id="login-email" placeholder="O seu email" required class="shadow-sm border-2 rounded-full w-full py-3 px-6 text-center mb-4 focus:ring-2 focus:ring-sky-400 outline-none">
+          <input type="password" id="login-password" placeholder="A sua palavra-passe" required class="shadow-sm border-2 rounded-full w-full py-3 px-6 text-center mb-6 focus:ring-2 focus:ring-sky-400 outline-none">
+          <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-full font-bold text-lg transition-transform transform hover:scale-105">Entrar</button>
+        </form>
+        <form id="register-form" class="hidden">
+          <input type="email" id="register-email" placeholder="O seu email" required class="shadow-sm border-2 rounded-full w-full py-3 px-6 text-center mb-4 focus:ring-2 focus:ring-sky-400 outline-none">
+          <input type="password" id="register-password" placeholder="Crie uma palavra-passe" required class="shadow-sm border-2 rounded-full w-full py-3 px-6 text-center mb-6 focus:ring-2 focus:ring-sky-400 outline-none">
+          <button type="submit" class="w-full bg-sky-500 hover:bg-sky-600 text-white py-3 rounded-full font-bold text-lg transition-transform transform hover:scale-105">Criar Conta</button>
+        </form>
+      </div>
+      <p class="text-sm text-gray-500 mt-4">
+        <a href="#" id="auth-toggle-link" class="text-sky-600 hover:underline">Não tem uma conta? Registe-se aqui.</a>
+      </p>
+      <p id="auth-error" class="text-red-500 mt-4 font-semibold h-5"></p>
     </div>
-    <div class="text-center">
-      <h2 class="text-2xl font-semibold mb-3">O Seu Desenho</h2>
-      <div id="generated-image-container" class="image-container bg-sky-100 min-h-[250px] flex items-center justify-center rounded-2xl p-2 shadow-inner">
-        <p class="text-gray-500">Aguardando a sua foto...</p>
+  </div>
+
+  <!-- APP CONTENT -->
+  <div id="app-content" class="hidden">
+    <div class="text-center mb-8 relative">
+      <div class="absolute top-0 right-0 -mt-4 -mr-4 sm:-mt-6 sm:-mr-6">
+        <span id="credits-display" class="font-bold text-lg text-green-600 bg-white px-3 py-1 rounded-full shadow-md"></span>
+        <button id="logout-button" class="ml-2 text-gray-400 hover:text-red-500 font-bold" title="Sair">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+        </button>
+      </div>
+      <h1 class="text-3xl sm:text-4xl font-bold text-sky-600">Desenhos para Colorir! 🎨</h1>
+      <p class="text-gray-600 mt-2 text-lg">Transforme qualquer foto numa página para colorir!</p>
+    </div>
+
+    <div class="flex justify-center mb-6">
+      <label for="image-upload" class="bg-yellow-400 hover:bg-yellow-500 text-yellow-900 py-3 px-8 rounded-full cursor-pointer font-bold text-lg transition-transform transform hover:scale-105">
+        Anexar Foto
+      </label>
+      <input type="file" id="image-upload" accept="image/*" class="hidden">
+    </div>
+
+    <div id="results" class="grid grid-cols-1 md:grid-cols-2 gap-8 hidden">
+      <div class="text-center">
+        <h2 class="text-2xl font-semibold mb-3">A Sua Foto Original</h2>
+        <div id="original-image-container" class="image-container bg-sky-100 min-h-[250px] flex items-center justify-center rounded-2xl p-2 shadow-inner"></div>
+      </div>
+      <div class="text-center">
+        <h2 class="text-2xl font-semibold mb-3">O Seu Desenho</h2>
+        <div id="generated-image-container" class="image-container bg-sky-100 min-h-[250px] flex items-center justify-center rounded-2xl p-2 shadow-inner">
+          <p class="text-gray-500">Aguardando a sua foto...</p>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div class="flex justify-center mt-8">
-    <button id="generate-button" class="bg-sky-600 hover:bg-sky-700 text-white py-3 px-8 rounded-full font-bold text-lg transition-transform transform hover:scale-105 shadow-lg hidden">
-      Transformar em Desenho
-    </button>
-  </div>
+    <div class="flex justify-center mt-8">
+      <button id="generate-button" class="bg-sky-600 hover:bg-sky-700 text-white py-3 px-8 rounded-full font-bold text-lg transition-transform transform hover:scale-105 shadow-lg hidden">
+        Transformar em Desenho
+      </button>
+    </div>
 
-  <div id="error-message" class="text-center text-red-500 mt-4 font-semibold h-5"></div>
+    <div id="coloring-section" class="hidden mt-8">
+      <canvas id="coloring-canvas" style="max-width:100%; border-radius:1rem;"></canvas>
+      <button id="color-button" class="hidden fixed bottom-6 right-6 bg-yellow-400 hover:bg-yellow-500 text-black py-2 px-4 rounded-full shadow-lg z-50">Colorir</button>
+      <div id="color-palette" class="hidden fixed bottom-16 right-6 bg-white p-2 rounded-lg shadow-lg z-50 flex gap-2">
+        <button class="color-btn w-8 h-8 rounded-full" data-color="#FF0000" style="background:#FF0000;"></button>
+        <button class="color-btn w-8 h-8 rounded-full" data-color="#00FF00" style="background:#00FF00;"></button>
+        <button class="color-btn w-8 h-8 rounded-full" data-color="#0000FF" style="background:#0000FF;"></button>
+        <button class="color-btn w-8 h-8 rounded-full" data-color="#FFFF00" style="background:#FFFF00;"></button>
+        <button class="color-btn w-8 h-8 rounded-full" data-color="#FF00FF" style="background:#FF00FF;"></button>
+      </div>
+    </div>
 
-  <!-- Botão e paleta de colorir -->
-  <button id="color-button" class="hidden">Colorir</button>
-  <div id="color-palette" class="color-palette hidden">
-    <div class="color-btn" style="background:red;" data-color="#FF0000"></div>
-    <div class="color-btn" style="background:green;" data-color="#00FF00"></div>
-    <div class="color-btn" style="background:blue;" data-color="#0000FF"></div>
-    <div class="color-btn" style="background:yellow;" data-color="#FFFF00"></div>
-    <div class="color-btn" style="background:orange;" data-color="#FFA500"></div>
-    <div class="color-btn" style="background:pink;" data-color="#FFC0CB"></div>
+    <div id="error-message" class="text-center text-red-500 mt-4 font-semibold h-5"></div>
   </div>
-</div>
 
 </main>
 
 <script>
-const CLOUDFLARE_WORKER_URL = 'https://fotoparapintar.lucasabreucotefis.workers.dev';
-const authSection = document.getElementById('auth-section');
-const appContent = document.getElementById('app-content');
-const loginForm = document.getElementById('login-form');
-const registerForm = document.getElementById('register-form');
-const authToggleLink = document.getElementById('auth-toggle-link');
-const authError = document.getElementById('auth-error');
-const logoutButton = document.getElementById('logout-button');
-const creditsDisplay = document.getElementById('credits-display');
-const imageUpload = document.getElementById('image-upload');
-const resultsSection = document.getElementById('results');
-const originalImageContainer = document.getElementById('original-image-container');
-const generatedImageContainer = document.getElementById('generated-image-container');
-const errorMessageDiv = document.getElementById('error-message');
-const generateButton = document.getElementById('generate-button');
-const colorButton = document.getElementById('color-button');
-const colorPalette = document.getElementById('color-palette');
+const CLOUDFLARE_WORKER_URL='COLOQUE_AQUI_SEU_WORKER_URL';
 
-let currentUser = null;
-let lastBase64Image = null;
-let coloringCanvas = null;
-let coloringCtx = null;
-let currentColor = '#FF0000';
+const authSection=document.getElementById('auth-section');
+const appContent=document.getElementById('app-content');
+const loginForm=document.getElementById('login-form');
+const registerForm=document.getElementById('register-form');
+const authToggleLink=document.getElementById('auth-toggle-link');
+const authError=document.getElementById('auth-error');
+const logoutButton=document.getElementById('logout-button');
+const creditsDisplay=document.getElementById('credits-display');
+const imageUpload=document.getElementById('image-upload');
+const resultsSection=document.getElementById('results');
+const originalImageContainer=document.getElementById('original-image-container');
+const generatedImageContainer=document.getElementById('generated-image-container');
+const errorMessageDiv=document.getElementById('error-message');
+const generateButton=document.getElementById('generate-button');
 
-// --- Autenticação ---
+const coloringCanvas=document.getElementById('coloring-canvas');
+const coloringCtx=coloringCanvas.getContext('2d');
+const colorButton=document.getElementById('color-button');
+const colorPalette=document.getElementById('color-palette');
+let currentUser=null;
+let lastBase64Image=null;
+let currentColor='#FF0000';
+
+// --- Auth Functions ---
 window.addEventListener('load',()=>{
-  currentUser = JSON.parse(localStorage.getItem('currentUser'));
-  if(currentUser){showApp();} else {showAuth();}
+  currentUser=JSON.parse(localStorage.getItem('currentUser'));
+  if(currentUser){showApp();}else{showAuth();}
 });
-authToggleLink.addEventListener('click',e=>{e.preventDefault(); const isLoginVisible=!loginForm.classList.contains('hidden'); loginForm.classList.toggle('hidden',isLoginVisible); registerForm.classList.toggle('hidden',!isLoginVisible); authToggleLink.textContent=isLoginVisible?'Já tem uma conta? Entre aqui.':'Não tem uma conta? Registe-se aqui.'; authError.textContent='';});
-registerForm.addEventListener('submit',e=>{e.preventDefault(); handleAuthRequest('register','register-email','register-password');});
-loginForm.addEventListener('submit',e=>{e.preventDefault(); handleAuthRequest('login','login-email','login-password');});
-async function handleAuthRequest(endpoint,emailId,passwordId){
+authToggleLink.addEventListener('click',(e)=>{e.preventDefault(); loginForm.classList.toggle('hidden'); registerForm.classList.toggle('hidden'); authToggleLink.textContent=loginForm.classList.contains('hidden')?'Não tem uma conta? Registe-se aqui.':'Já tem uma conta? Entre aqui.'; authError.textContent='';});
+registerForm.addEventListener('submit',async e=>{e.preventDefault();handleAuth('register','register-email','register-password');});
+loginForm.addEventListener('submit',async e=>{e.preventDefault();handleAuth('login','login-email','login-password');});
+async function handleAuth(endpoint,emailId,passwordId){
   authError.textContent='';
   const email=document.getElementById(emailId).value.trim();
   const password=document.getElementById(passwordId).value;
   try{
     const res=await fetch(`${CLOUDFLARE_WORKER_URL}/${endpoint}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
-    const data=await res.json();
-    if(!res.ok) throw new Error(data.error||`Erro no ${endpoint}`);
-    if(endpoint==='register'){alert('Conta criada com sucesso! Faça login.'); authToggleLink.click();}
-    else {currentUser={email,credits:data.credits}; localStorage.setItem('currentUser',JSON.stringify(currentUser)); showApp();}
+    const data=await res.json(); if(!res.ok) throw new Error(data.error||`Erro no ${endpoint}`);
+    if(endpoint==='register'){alert('Conta criada com sucesso! Faça login.'); authToggleLink.click();} 
+    else{currentUser={email,credits:data.credits}; localStorage.setItem('currentUser',JSON.stringify(currentUser)); showApp();}
   }catch(err){authError.textContent=err.message;}
 }
 logoutButton.addEventListener('click',()=>{
   currentUser=null; localStorage.removeItem('currentUser'); showAuth();
-  resultsSection.classList.add('hidden'); originalImageContainer.innerHTML=''; generatedImageContainer.innerHTML='<p class="text-gray-500">Aguardando a sua foto...</p>';
+  resultsSection.classList.add('hidden');
+  originalImageContainer.innerHTML='';
+  generatedImageContainer.innerHTML='<p class="text-gray-500">Aguardando a sua foto...</p>';
   generateButton.classList.add('hidden'); imageUpload.value='';
-  colorButton.classList.add('hidden'); colorPalette.classList.add('hidden');
 });
 
-// --- Upload e geração de desenho ---
-imageUpload.addEventListener('change',async ev=>{
-  const file=ev.target.files[0]; if(!file) return;
+// --- Upload & Generate ---
+imageUpload.addEventListener('change',async e=>{
+  const file=e.target.files[0]; if(!file) return;
   const previewUrl=await fileToBase64(file); originalImageContainer.innerHTML=`<img src="${previewUrl}" alt="Foto Original">`;
-  resultsSection.classList.remove('hidden'); generateButton.classList.remove('hidden'); generatedImageContainer.innerHTML='<p class="text-gray-500">Pronto para transformar!</p>';
-  lastBase64Image = await resizeImageFile(file,1024);
+  resultsSection.classList.remove('hidden'); generateButton.classList.remove('hidden');
+  generatedImageContainer.innerHTML='<p class="text-gray-500">Pronto para transformar!</p>';
+  lastBase64Image=await resizeImageFile(file,1024);
 });
-generateButton.addEventListener('click',async ()=>{
-  errorMessageDiv.textContent='';
-  if(!currentUser){errorMessageDiv.textContent='Faça login.'; return;}
+
+generateButton.addEventListener('click',async()=>{
+  errorMessageDiv.textContent=''; if(!currentUser){errorMessageDiv.textContent='Faça login.'; return;}
   if(!lastBase64Image){errorMessageDiv.textContent='Anexe uma foto.'; return;}
   const {dataUrl,mimeType}=lastBase64Image; const base64data=dataUrl.split(',')[1];
   const payload={imageData:base64data,mimeType,userEmail:currentUser.email};
@@ -170,73 +170,63 @@ generateButton.addEventListener('click',async ()=>{
   try{
     const resp=await fetch(`${CLOUDFLARE_WORKER_URL}/generate-image`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     const data=await resp.json(); if(!resp.ok) throw new Error(data.error||'Erro ao gerar a imagem');
-    showColoringCanvas(data.imageBase64);
+    loadGeneratedImage(data.imageBase64);
     currentUser.credits=data.credits; localStorage.setItem('currentUser',JSON.stringify(currentUser)); updateCreditsDisplay();
   }catch(err){generatedImageContainer.innerHTML=`<p class="text-red-600 font-bold">${err.message}</p>`;}
   finally{generateButton.disabled=false;}
 });
 
-// --- Coloring canvas ---
-function showColoringCanvas(base64){
-  generatedImageContainer.innerHTML='';
-  coloringCanvas=document.createElement('canvas'); coloringCanvas.id='coloring-canvas';
-  generatedImageContainer.appendChild(coloringCanvas);
+// --- Coloring ---
+function loadGeneratedImage(base64){
   const img=new Image();
   img.onload=()=>{
-    coloringCanvas.width=img.width; coloringCanvas.height=img.height;
-    coloringCtx=coloringCanvas.getContext('2d'); coloringCtx.drawImage(img,0,0);
+    coloringCanvas.width=img.width;
+    coloringCanvas.height=img.height;
+    coloringCtx.drawImage(img,0,0);
     colorButton.classList.remove('hidden');
+    document.getElementById('coloring-section').classList.remove('hidden');
   };
   img.src='data:image/png;base64,'+base64;
 }
-
-// --- Colorir ---
-colorButton.addEventListener('click',()=>{
-  colorPalette.classList.toggle('hidden');
-});
-colorPalette.querySelectorAll('.color-btn').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    currentColor=btn.getAttribute('data-color');
-    colorPalette.classList.add('hidden');
-  });
-});
-
-// Flood fill simples (boundary fill)
-coloringCanvas?.addEventListener('click',fillRegion,false);
-function fillRegion(e){
-  if(!coloringCtx) return;
+colorButton.addEventListener('click',()=>colorPalette.classList.toggle('hidden'));
+colorPalette.querySelectorAll('.color-btn').forEach(btn=>btn.addEventListener('click',()=>{currentColor=btn.getAttribute('data-color'); colorPalette.classList.add('hidden');}));
+coloringCanvas.addEventListener('click',function(e){
   const rect=coloringCanvas.getBoundingClientRect();
   const x=Math.floor((e.clientX-rect.left)*(coloringCanvas.width/rect.width));
   const y=Math.floor((e.clientY-rect.top)*(coloringCanvas.height/rect.height));
   floodFill(coloringCtx,x,y,currentColor);
-}
+});
 
-// --- Flood fill algoritmo ---
-function floodFill(ctx,x,y,fillColor){
-  const w=ctx.canvas.width, h=ctx.canvas.height;
-  const img=ctx.getImageData(0,0,w,h); const data=img.data;
-  const stack=[[x,y]]; const targetColor=getPixel(data,x,y,w); const fillCol=hexToRgb(fillColor);
+function floodFill(ctx,startX,startY,fillColor){
+  const w=ctx.canvas.width,h=ctx.canvas.height;
+  const img=ctx.getImageData(0,0,w,h);
+  const data=img.data;
+  const stack=[[startX,startY]];
+  const targetColor=getPixel(data,startX,startY,w);
+  const fillCol=hexToRgb(fillColor);
   if(colorsMatch(targetColor,fillCol)) return;
   while(stack.length>0){
-    const [cx,cy]=stack.pop(); let idx=(cy*w+cx)*4; const col=getPixel(data,cx,cy,w);
-    if(!colorsMatch(col,targetColor)) continue; setPixel(data,cx,cy,fillCol); // push vizinhos
-    if(cx>0) stack.push([cx-1,cy]); if(cx<w-1) stack.push([cx+1,cy]);
-    if(cy>0) stack.push([cx,cy-1]); if(cy<h-1) stack.push([cx,cy+1]);
+    const [x,y]=stack.pop(); let idx=(y*w+x)*4;
+    const col=getPixel(data,x,y,w); if(!colorsMatch(col,targetColor)) continue;
+    setPixel(data,x,y,fillCol);
+    if(x>0) stack.push([x-1,y]); if(x<w-1) stack.push([x+1,y]);
+    if(y>0) stack.push([x,y-1]); if(y<h-1) stack.push([x,y+1]);
   }
   ctx.putImageData(img,0,0);
 }
-function getPixel(data,x,y,w){const idx=(y*w+x)*4; return [data[idx],data[idx+1],data[idx+2],data[idx+3]];}
-function setPixel(data,x,y,[r,g,b,a]){const idx=(y*data.width+x)*4; data[idx]=r; data[idx+1]=g; data[idx+2]=b; data[idx+3]=a;}
-function colorsMatch(c1,c2){return c1[0]===c2[0]&&c1[1]===c2[1]&&c1[2]===c2[2]&&c1[3]===c2[3];}
-function hexToRgb(hex){let r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16); return [r,g,b,255];}
+function getPixel(data,x,y,w){const i=(y*w+x)*4;return[data[i],data[i+1],data[i+2],data[i+3]];}
+function setPixel(data,x,y,[r,g,b,a]){const i=(y*coloringCanvas.width+x)*4;data[i]=r;data[i+1]=g;data[i+2]=b;data[i+3]=255;}
+function colorsMatch(c1,c2){return c1[0]===c2[0]&&c1[1]===c2[1]&&c1[2]===c2[2];}
+function hexToRgb(hex){const bigint=parseInt(hex.replace('#',''),16);return[(bigint>>16)&255,(bigint>>8)&255,bigint&255,255];}
 
-// --- Funções utilitárias ---
+// --- UI ---
 function showApp(){authSection.classList.add('hidden'); appContent.classList.remove('hidden'); updateCreditsDisplay();}
 function showAuth(){appContent.classList.add('hidden'); authSection.classList.remove('hidden');}
 function updateCreditsDisplay(){creditsDisplay.textContent=currentUser?`Créditos: ${currentUser.credits}`:'';}
-function fileToBase64(file){return new Promise((res,rej)=>{const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file);});}
-async function resizeImageFile(file,maxDim=1024){const dataUrl=await fileToBase64(file); return new Promise((res,rej)=>{const img=new Image(); img.onload=()=>{let {width,height}=img;if(width>maxDim||height>maxDim){if(width>height){height=Math.round(height*maxDim/width); width=maxDim;} else{width=Math.round(width*maxDim/height); height=maxDim;}}const canvas=document.createElement('canvas'); canvas.width=width; canvas.height=height; const ctx=canvas.getContext('2d'); ctx.drawImage(img,0,0,width,height); const mimeType=file.type==='image/png'?'image/png':'image/jpeg'; res({dataUrl:canvas.toDataURL(mimeType,0.92),mimeType});}; img.onerror=rej; img.src=dataUrl;});}
-</script>
 
+// --- Util ---
+function fileToBase64(file){return new Promise((res,rej)=>{const reader=new FileReader();reader.onload=()=>res(reader.result);reader.onerror=rej;reader.readAsDataURL(file);});}
+async function resizeImageFile(file,maxDim=1024){const dataUrl=await fileToBase64(file);return new Promise((res,rej)=>{const img=new Image();img.onload=()=>{let {width,height}=img;if(width>maxDim||height>maxDim){if(width>height){height=Math.round(height*maxDim/width);width=maxDim;}else{width=Math.round(width*maxDim/height);height=maxDim;}}const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,width,height);const mt=file.type==='image/png'?'image/png':'image/jpeg';res({dataUrl:canvas.toDataURL(mt,0.92),mimeType:mt});}; img.onerror=rej; img.src=dataUrl;});}
+</script>
 </body>
 </html>
