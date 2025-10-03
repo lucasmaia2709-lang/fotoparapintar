@@ -1,0 +1,344 @@
+
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gerador de Desenhos para Colorir</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body { 
+      font-family: 'Baloo 2', cursive; 
+      background-color: #f0f9ff; /* Azul céu muito claro */
+    }
+    .loader {
+      border: 4px solid #fde68a; /* Amarelo claro */
+      border-top: 4px solid #38bdf8; /* Azul céu */
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .image-container img {
+      max-height: 400px;
+      width: auto;
+      max-width: 100%;
+      border-radius: 1rem;
+      object-fit: contain;
+    }
+    .main-container {
+        transition: all 0.5s ease-in-out;
+    }
+  </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+  <main class="main-container bg-white p-6 sm:p-8 rounded-2xl shadow-2xl max-w-4xl w-full">
+    <!-- SECÇÃO DE AUTENTICAÇÃO -->
+    <div id="auth-section">
+      <div class="text-center">
+        <h1 class="text-3xl sm:text-4xl font-bold text-sky-500">Bem-vindo! ✨</h1>
+        <p class="text-gray-600 mt-2">Crie a sua conta ou faça login para começar.</p>
+        
+        <div id="auth-form-container" class="mt-6 max-w-sm mx-auto">
+          <!-- Formulário de Login -->
+          <form id="login-form">
+            <input type="email" id="login-email" placeholder="O seu email" required class="shadow-sm border-2 rounded-full w-full py-3 px-6 text-center mb-4 focus:ring-2 focus:ring-sky-400 outline-none">
+            <input type="password" id="login-password" placeholder="A sua palavra-passe" required class="shadow-sm border-2 rounded-full w-full py-3 px-6 text-center mb-6 focus:ring-2 focus:ring-sky-400 outline-none">
+            <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-full font-bold text-lg transition-transform transform hover:scale-105">Entrar</button>
+          </form>
+
+          <!-- Formulário de Registo (escondido por defeito) -->
+          <form id="register-form" class="hidden">
+            <input type="email" id="register-email" placeholder="O seu email" required class="shadow-sm border-2 rounded-full w-full py-3 px-6 text-center mb-4 focus:ring-2 focus:ring-sky-400 outline-none">
+            <input type="password" id="register-password" placeholder="Crie uma palavra-passe" required class="shadow-sm border-2 rounded-full w-full py-3 px-6 text-center mb-6 focus:ring-2 focus:ring-sky-400 outline-none">
+            <button type="submit" class="w-full bg-sky-500 hover:bg-sky-600 text-white py-3 rounded-full font-bold text-lg transition-transform transform hover:scale-105">Criar Conta</button>
+          </form>
+        </div>
+        
+        <p class="text-sm text-gray-500 mt-4">
+          <a href="#" id="auth-toggle-link" class="text-sky-600 hover:underline">Não tem uma conta? Registe-se aqui.</a>
+        </p>
+        <p id="auth-error" class="text-red-500 mt-4 font-semibold h-5"></p>
+      </div>
+    </div>
+
+    <!-- CONTEÚDO PRINCIPAL DA APLICAÇÃO (escondido por defeito) -->
+    <div id="app-content" class="hidden">
+      <div class="text-center mb-8 relative">
+        <div class="absolute top-0 right-0 -mt-4 -mr-4 sm:-mt-6 sm:-mr-6">
+          <span id="credits-display" class="font-bold text-lg text-green-600 bg-white px-3 py-1 rounded-full shadow-md"></span>
+          <button id="logout-button" class="ml-2 text-gray-400 hover:text-red-500 font-bold" title="Sair">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+          </button>
+        </div>
+        <h1 class="text-3xl sm:text-4xl font-bold text-sky-600">Desenhos para Colorir! 🎨</h1>
+        <p class="text-gray-600 mt-2 text-lg">Transforme qualquer foto numa página para colorir!</p>
+      </div>
+
+      <div class="flex justify-center mb-6">
+        <label for="image-upload" class="bg-yellow-400 hover:bg-yellow-500 text-yellow-900 py-3 px-8 rounded-full cursor-pointer font-bold text-lg transition-transform transform hover:scale-105">
+          Anexar Foto
+        </label>
+        <input type="file" id="image-upload" accept="image/*" class="hidden">
+      </div>
+
+      <div id="results" class="grid grid-cols-1 md:grid-cols-2 gap-8 hidden">
+        <div class="text-center">
+          <h2 class="text-2xl font-semibold mb-3">A Sua Foto Original</h2>
+          <div id="original-image-container" class="image-container bg-sky-100 min-h-[250px] flex items-center justify-center rounded-2xl p-2 shadow-inner"></div>
+        </div>
+        <div class="text-center">
+          <h2 class="text-2xl font-semibold mb-3">O Seu Desenho</h2>
+          <div id="generated-image-container" class="image-container bg-sky-100 min-h-[250px] flex items-center justify-center rounded-2xl p-2 shadow-inner">
+            <p class="text-gray-500">Aguardando a sua foto...</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-center mt-8">
+        <button id="generate-button" class="bg-sky-600 hover:bg-sky-700 text-white py-3 px-8 rounded-full font-bold text-lg transition-transform transform hover:scale-105 shadow-lg hidden">
+          Transformar em Desenho
+        </button>
+      </div>
+
+      <div id="error-message" class="text-center text-red-500 mt-4 font-semibold h-5"></div>
+    </div>
+  </main>
+
+<script>
+  // IMPORTANTE: Substitua este URL pelo URL do seu worker da Cloudflare
+  const CLOUDFLARE_WORKER_URL = 'https://fotoparapintar.lucasabreucotefis.workers.dev';
+
+  // --- Seleção de Elementos ---
+  const authSection = document.getElementById('auth-section');
+  const appContent = document.getElementById('app-content');
+  const loginForm = document.getElementById('login-form');
+  const registerForm = document.getElementById('register-form');
+  const authToggleLink = document.getElementById('auth-toggle-link');
+  const authError = document.getElementById('auth-error');
+  const logoutButton = document.getElementById('logout-button');
+  const creditsDisplay = document.getElementById('credits-display');
+  const imageUpload = document.getElementById('image-upload');
+  const resultsSection = document.getElementById('results');
+  const originalImageContainer = document.getElementById('original-image-container');
+  const generatedImageContainer = document.getElementById('generated-image-container');
+  const errorMessageDiv = document.getElementById('error-message');
+  const generateButton = document.getElementById('generate-button');
+
+  let currentUser = null;
+  let lastBase64Image = null;
+
+  // --- Lógica Principal ---
+
+  // Ao carregar a página, verifica se o utilizador já está "logado"
+  window.addEventListener('load', () => {
+    currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    if (currentUser) {
+      showApp();
+    } else {
+      showAuth();
+    }
+    // Verifica se o URL do worker foi alterado
+    if (CLOUDFLARE_WORKER_URL.includes('fotoparapintar.lucasabreucotefis.workers.dev')) {
+        alert('ATENÇÃO: Por favor, edite o ficheiro index.html e substitua a constante CLOUDFLARE_WORKER_URL pelo URL do seu worker.');
+    }
+  });
+
+  // Alterna entre os formulários de login e registo
+  authToggleLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    const isLoginVisible = !loginForm.classList.contains('hidden');
+    loginForm.classList.toggle('hidden', isLoginVisible);
+    registerForm.classList.toggle('hidden', !isLoginVisible);
+    authToggleLink.textContent = isLoginVisible
+      ? 'Já tem uma conta? Entre aqui.'
+      : 'Não tem uma conta? Registe-se aqui.';
+    authError.textContent = '';
+  });
+
+  // Submissão do formulário de registo
+  registerForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    handleAuthRequest('register', 'register-email', 'register-password');
+  });
+
+  // Submissão do formulário de login
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    handleAuthRequest('login', 'login-email', 'login-password');
+  });
+  
+  // Função genérica para tratar registo e login
+  async function handleAuthRequest(endpoint, emailId, passwordId) {
+      authError.textContent = '';
+      const email = document.getElementById(emailId).value.trim();
+      const password = document.getElementById(passwordId).value;
+      
+      try {
+          const res = await fetch(`${CLOUDFLARE_WORKER_URL}/${endpoint}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, password })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || `Erro no ${endpoint}`);
+
+          if (endpoint === 'register') {
+              alert('Conta criada com sucesso! Por favor, faça login.');
+              authToggleLink.click(); // Volta para o ecrã de login
+          } else { // login
+              currentUser = { email, credits: data.credits };
+              localStorage.setItem('currentUser', JSON.stringify(currentUser));
+              showApp();
+          }
+      } catch (err) {
+          authError.textContent = err.message;
+      }
+  }
+
+
+  // Logout
+  logoutButton.addEventListener('click', () => {
+    currentUser = null;
+    localStorage.removeItem('currentUser');
+    showAuth();
+    // Limpa o estado da UI
+    resultsSection.classList.add('hidden');
+    originalImageContainer.innerHTML = '';
+    generatedImageContainer.innerHTML = '<p class="text-gray-500">Aguardando a sua foto...</p>';
+    generateButton.classList.add('hidden');
+    imageUpload.value = ''; // Limpa a seleção de ficheiro
+  });
+
+  // Quando uma imagem é selecionada
+  imageUpload.addEventListener('change', async (ev) => {
+    const file = ev.target.files[0];
+    if (!file) return;
+
+    // Mostra a pré-visualização da imagem original
+    const previewUrl = await fileToBase64(file);
+    originalImageContainer.innerHTML = `<img src="${previewUrl}" alt="Foto Original">`;
+    resultsSection.classList.remove('hidden');
+    generateButton.classList.remove('hidden');
+    generatedImageContainer.innerHTML = '<p class="text-gray-500">Pronto para transformar!</p>';
+    errorMessageDiv.textContent = '';
+
+
+    // Redimensiona a imagem para otimizar o envio
+    const resized = await resizeImageFile(file, 1024); // Limita a 1024px
+    lastBase64Image = resized; // Guarda { dataUrl, mimeType }
+  });
+
+  // Quando o botão de gerar é clicado
+  generateButton.addEventListener('click', async () => {
+    errorMessageDiv.textContent = '';
+
+    if (!currentUser) { errorMessageDiv.textContent = 'Por favor, faça login.'; return; }
+    if (!lastBase64Image) { errorMessageDiv.textContent = 'Por favor, anexe uma foto.'; return; }
+
+    const { dataUrl, mimeType } = lastBase64Image;
+    const base64data = dataUrl.split(',')[1];
+
+    const payload = { 
+        imageData: base64data, 
+        mimeType, 
+        userEmail: currentUser.email 
+    };
+
+    // Mostra o spinner de carregamento
+    generatedImageContainer.innerHTML = '<div class="loader"></div>';
+    generateButton.disabled = true;
+
+    try {
+      const resp = await fetch(`${CLOUDFLARE_WORKER_URL}/generate-image`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Ocorreu um erro ao gerar a imagem');
+
+      // Mostra a imagem gerada
+      generatedImageContainer.innerHTML = `<img src="data:image/png;base64,${data.imageBase64}" alt="Desenho para Colorir">`;
+      
+      // Atualiza os créditos localmente
+      currentUser.credits = data.credits;
+      localStorage.setItem('currentUser', JSON.stringify(currentUser));
+      updateCreditsDisplay();
+      
+    } catch (err) {
+      generatedImageContainer.innerHTML = `<p class="text-red-600 font-bold">${err.message}</p>`;
+    } finally {
+        generateButton.disabled = false;
+    }
+  });
+
+
+  // --- Funções de UI ---
+
+  function showApp() {
+    authSection.classList.add('hidden');
+    appContent.classList.remove('hidden');
+    updateCreditsDisplay();
+  }
+
+  function showAuth() {
+    appContent.classList.add('hidden');
+    authSection.classList.remove('hidden');
+  }
+
+  function updateCreditsDisplay() {
+    creditsDisplay.textContent = currentUser ? `Créditos: ${currentUser.credits}` : '';
+  }
+
+  // --- Funções Utilitárias ---
+
+  // Converte um ficheiro para uma string Base64 (Data URL)
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Redimensiona uma imagem no cliente antes de enviar
+  async function resizeImageFile(file, maxDimension = 1024) {
+    const dataUrl = await fileToBase64(file);
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Mantém PNG para transparência, senão usa JPEG para ser mais leve
+        const mimeType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+        const resizedDataUrl = canvas.toDataURL(mimeType, 0.92);
+        resolve({ dataUrl: resizedDataUrl, mimeType });
+      };
+      img.onerror = reject;
+      img.src = dataUrl;
+    });
+  }
+</script>
+</body>
+</html>
