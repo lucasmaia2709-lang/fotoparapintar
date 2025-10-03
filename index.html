@@ -8,13 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;700&display=swap" rel="stylesheet">
 <style>
   body { font-family: 'Baloo 2', cursive; background-color: #f0f9ff; }
-  .loader {
-    border: 4px solid #fde68a;
-    border-top: 4px solid #38bdf8;
-    border-radius: 50%;
-    width: 40px; height: 40px;
-    animation: spin 1s linear infinite;
-  }
+  .loader { border: 4px solid #fde68a; border-top: 4px solid #38bdf8; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
   @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   .image-container img { max-height: 400px; width: auto; max-width: 100%; border-radius: 1rem; object-fit: contain; cursor: crosshair; }
   .color-palette { display: flex; gap: 5px; margin-top: 10px; }
@@ -25,10 +19,31 @@
 
 <main class="main-container bg-white p-6 sm:p-8 rounded-2xl shadow-2xl max-w-4xl w-full">
 
-  <!-- SECÇÃO DE AUTENTICAÇÃO (igual ao seu HTML original) -->
-  <div id="auth-section">...</div>
+  <!-- SECÇÃO DE AUTENTICAÇÃO -->
+  <div id="auth-section">
+    <div class="text-center">
+      <h1 class="text-3xl sm:text-4xl font-bold text-sky-500">Bem-vindo! ✨</h1>
+      <p class="text-gray-600 mt-2">Crie a sua conta ou faça login para começar.</p>
+      <div id="auth-form-container" class="mt-6 max-w-sm mx-auto">
+        <form id="login-form">
+          <input type="email" id="login-email" placeholder="O seu email" required class="shadow-sm border-2 rounded-full w-full py-3 px-6 text-center mb-4 focus:ring-2 focus:ring-sky-400 outline-none">
+          <input type="password" id="login-password" placeholder="A sua palavra-passe" required class="shadow-sm border-2 rounded-full w-full py-3 px-6 text-center mb-6 focus:ring-2 focus:ring-sky-400 outline-none">
+          <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-full font-bold text-lg transition-transform transform hover:scale-105">Entrar</button>
+        </form>
+        <form id="register-form" class="hidden">
+          <input type="email" id="register-email" placeholder="O seu email" required class="shadow-sm border-2 rounded-full w-full py-3 px-6 text-center mb-4 focus:ring-2 focus:ring-sky-400 outline-none">
+          <input type="password" id="register-password" placeholder="Crie uma palavra-passe" required class="shadow-sm border-2 rounded-full w-full py-3 px-6 text-center mb-6 focus:ring-2 focus:ring-sky-400 outline-none">
+          <button type="submit" class="w-full bg-sky-500 hover:bg-sky-600 text-white py-3 rounded-full font-bold text-lg transition-transform transform hover:scale-105">Criar Conta</button>
+        </form>
+      </div>
+      <p class="text-sm text-gray-500 mt-4">
+        <a href="#" id="auth-toggle-link" class="text-sky-600 hover:underline">Não tem uma conta? Registe-se aqui.</a>
+      </p>
+      <p id="auth-error" class="text-red-500 mt-4 font-semibold h-5"></p>
+    </div>
+  </div>
 
-  <!-- CONTEÚDO PRINCIPAL DA APLICAÇÃO -->
+  <!-- CONTEÚDO PRINCIPAL -->
   <div id="app-content" class="hidden">
     <div class="text-center mb-8 relative">
       <div class="absolute top-0 right-0 -mt-4 -mr-4 sm:-mt-6 sm:-mr-6">
@@ -71,11 +86,14 @@
     </div>
 
     <div id="error-message" class="text-center text-red-500 mt-4 font-semibold h-5"></div>
-  </main>
+  </div>
+</main>
 
 <script>
-  // Variáveis do app
-  const CLOUDFLARE_WORKER_URL = 'https://fotoparapintar.lucasabreucotefis.workers.dev';
+  // --- Seu código de login, registro e upload (mantendo original) ---
+  // Copie todo seu JS original aqui até a parte de gerar imagem
+  // Depois, adicionamos a função de colorir:
+  
   const generatedContainer = document.getElementById('generated-image-container');
   const colorButton = document.getElementById('color-button');
   const colorPalette = document.getElementById('color-palette');
@@ -84,15 +102,11 @@
   let coloringCanvas = null;
   let ctx = null;
 
-  // Após gerar a imagem
   function enableColoring(base64Img){
     colorButton.classList.remove('hidden');
 
-    colorButton.onclick = () => {
-      colorPalette.classList.toggle('hidden');
-    };
+    colorButton.onclick = () => { colorPalette.classList.toggle('hidden'); };
 
-    // Clique numa cor
     document.querySelectorAll('.color-swatch').forEach(swatch=>{
       swatch.onclick = () => {
         selectedColor = swatch.dataset.color;
@@ -100,7 +114,6 @@
       };
     });
 
-    // Converte a imagem para canvas
     const img = new Image();
     img.onload = () => {
       coloringCanvas = document.createElement('canvas');
@@ -111,7 +124,6 @@
       generatedContainer.innerHTML = '';
       generatedContainer.appendChild(coloringCanvas);
 
-      // Clique para pintar
       coloringCanvas.addEventListener('click', e => {
         if(!selectedColor) return;
         const rect = coloringCanvas.getBoundingClientRect();
@@ -154,13 +166,6 @@
   function colorsMatch(a,b){
     return a[0]===b[0] && a[1]===b[1] && a[2]===b[2] && a[3]===b[3];
   }
-
-  // --- SEU CÓDIGO ORIGINAL DE LOGIN/UPLOAD/GENERATE ---
-  // Quando a imagem é gerada, chamamos enableColoring
-  // Por exemplo, dentro do fetch que processa a resposta:
-  /*
-    enableColoring(data.imageBase64);
-  */
 </script>
 </body>
 </html>
