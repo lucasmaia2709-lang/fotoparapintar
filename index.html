@@ -1,4 +1,4 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt">
 
 <head>
@@ -152,28 +152,11 @@ body {
         getDoc
     } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
     
-    // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyD6Jdnkfql5Ou6Na_BI8zDF6L2a_3JRZsY",
-  authDomain: "fotoparapintar.firebaseapp.com",
-  projectId: "fotoparapintar",
-  storageBucket: "fotoparapintar.firebasestorage.app",
-  messagingSenderId: "353615488725",
-  appId: "1:353615488725:web:91a8f3ec55106381e8645c",
-  measurementId: "G-CDVLBSL0SY"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-
+    // ===================================================================================
+    // PASSO 1: CONFIGURAÇÃO DO FIREBASE
+    // Cole aqui o objeto de configuração do seu projeto Firebase.
+    // Pode encontrá-lo nas Definições do Projeto > As suas apps > App da Web.
+    // ===================================================================================
     const firebaseConfig = {
         apiKey: "A_SUA_API_KEY_DO_FIREBASE",
         authDomain: "O_SEU_PROJETO.firebaseapp.com",
@@ -191,7 +174,7 @@ const analytics = getAnalytics(app);
     // demonstração, isto pode ser aceitável, mas para um projeto em produção,
     // utilize uma função de servidor (serverless function) para proteger a chave.
     // ===================================================================================
-    const GEMINI_API_KEY = "AIzaSyBo90fWoREhClB8W3fuI4mD8_eEDrPYrKo";
+    const GEMINI_API_KEY = "A_SUA_CHAVE_DE_API_DO_GEMINI";
 
 
     // --- INICIALIZAÇÃO DA APLICAÇÃO (NÃO PRECISA DE ALTERAR) ---
@@ -228,20 +211,21 @@ const analytics = getAnalytics(app);
 
     onAuthStateChanged(auth, async (user) => {
         if (user) {
+            console.log("Utilizador autenticado:", user.isAnonymous ? "Anónimo" : user.email);
             currentUser = user;
             listenToUserData(user.uid);
             authSection.classList.add('hidden');
             appContent.classList.remove('hidden');
         } else {
+            console.log("Nenhum utilizador autenticado. A tentar login anónimo...");
             currentUser = null;
             authSection.classList.remove('hidden');
             appContent.classList.add('hidden');
-            // Tenta fazer login anónimo se o utilizador não estiver logado
             try {
                 await signInAnonymously(auth);
             } catch(error) {
-                console.error("Falha no login anónimo:", error);
-                authError.textContent = "Não foi possível iniciar a sessão. Verifique as suas definições.";
+                console.error("Falha no login anónimo. Causa provável: Domínio não autorizado no Firebase.", error);
+                authError.textContent = "Erro de configuração. Verifique se o URL do site está nos 'domínios autorizados' do Firebase Auth.";
             }
         }
     });
@@ -262,10 +246,12 @@ const analytics = getAnalytics(app);
         e.preventDefault();
         const email = document.getElementById('register-email').value;
         const password = document.getElementById('register-password').value;
+        authError.textContent = '';
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             await setupNewUser(userCredential.user);
         } catch (error) {
+            console.error("Erro de registo:", error);
             authError.textContent = 'Erro ao registar: ' + error.message;
         }
     });
@@ -274,9 +260,11 @@ const analytics = getAnalytics(app);
         e.preventDefault();
         const email = document.getElementById('login-email').value;
         const password = document.getElementById('login-password').value;
+        authError.textContent = '';
         try {
             await signInWithEmailAndPassword(auth, email, password);
         } catch (error) {
+            console.error("Erro de login:", error);
             authError.textContent = 'Erro ao entrar: ' + error.message;
         }
     });
@@ -304,7 +292,8 @@ const analytics = getAnalytics(app);
                 userCredits = data.credits !== undefined ? data.credits : 0;
                 creditsDisplay.textContent = `Créditos: ${userCredits}`;
             } else {
-                 setupNewUser({uid: userId, email: "Anónimo"});
+                 console.log(`A configurar novo perfil para o utilizador: ${userId}`);
+                 setupNewUser({uid: userId, email: currentUser.email || "Anónimo"});
             }
         });
     }
