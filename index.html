@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="pt">
 
 <head>
@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Gerador de Desenhos para Colorir</title>
 <script src="https://cdn.tailwindcss.com"></script>
+
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;700&display=swap" rel="stylesheet">
 <style>
 body {
@@ -155,27 +156,55 @@ body {
     
     // ===================================================================================
     // PASSO 1: CONFIGURAÇÃO DO FIREBASE
-    // O código abaixo foi adicionado com as suas chaves.
+    // As suas chaves foram inseridas aqui.
     // ===================================================================================
+  // Import the functions you need from the SDKs you need
+    import { initializeApp } from "firebase/app";
+    import { getAnalytics } from "firebase/analytics";
+    // TODO: Add SDKs for Firebase products that you want to use
+    // https://firebase.google.com/docs/web/setup#available-libraries
+
+    // Your web app's Firebase configuration
+    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
     const firebaseConfig = {
-      apiKey: "AIzaSyD6Jdnkfql5Ou6Na_BI8zDF6L2a_3JRZsY",
-      authDomain: "fotoparapintar.firebaseapp.com",
-      projectId: "fotoparapintar",
-      storageBucket: "fotoparapintar.appspot.com",
-      messagingSenderId: "353615488725",
-      appId: "1:353615488725:web:91a8f3ec55106381e8645c",
-      measurementId: "G-CDVLBSL0SY"
+    apiKey: "AIzaSyD6Jdnkfql5Ou6Na_BI8zDF6L2a_3JRZsY",
+    authDomain: "fotoparapintar.firebaseapp.com",
+    projectId: "fotoparapintar",
+    storageBucket: "fotoparapintar.firebasestorage.app",
+    messagingSenderId: "353615488725",
+    appId: "1:353615488725:web:91a8f3ec55106381e8645c",
+    measurementId: "G-CDVLBSL0SY"
     };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
     
     // ===================================================================================
     // PASSO 2: CHAVE DE API DO GEMINI
-    // Cole aqui a sua chave de API do Google AI Studio (Gemini).
-    // ATENÇÃO: Expor esta chave no código do lado do cliente é um RISCO DE SEGURANÇA.
-    // Qualquer pessoa pode ver a sua chave e usá-la. Para um projeto pessoal ou de 
-    // demonstração, isto pode ser aceitável, mas para um projeto em produção,
-    // utilize uma função de servidor (serverless function) para proteger a chave.
+    // ADICIONE A SUA CHAVE AQUI.
     // ===================================================================================
-    const GEMINI_API_KEY = "A_SUA_CHAVE_DE_API_DO_GEMINI";
+    const GEMINI_API_KEY = "AIzaSyBo90fWoREhClB8W3fuI4mD8_eEDrPYrKo";
+
+
+    // --- VERIFICAÇÃO DE CONFIGURAÇÃO ---
+    // Este bloco irá mostrar um erro e parar a app se as chaves não forem alteradas.
+    if (firebaseConfig.apiKey.startsWith("A_SUA_") || GEMINI_API_KEY.startsWith("A_SUA_")) {
+        document.querySelector('main').innerHTML = `
+            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-8 rounded-2xl shadow-2xl max-w-3xl w-full">
+                <h1 class="text-2xl font-bold mb-4">Erro de Configuração Crítico</h1>
+                <p class="mb-2">A aplicação não pode iniciar porque as chaves de API do Firebase ou do Gemini não foram configuradas corretamente no ficheiro <strong>index.html</strong>.</p>
+                <p class="mb-4">Por favor, siga estes passos:</p>
+                <ol class="list-decimal list-inside space-y-2">
+                    <li>Abra o ficheiro <strong>index.html</strong> num editor de texto.</li>
+                    <li>Encontre o objeto <code>firebaseConfig</code> e substitua-o pelo que copiou do seu painel Firebase.</li>
+                    <li>Encontre a variável <code>GEMINI_API_KEY</code> e substitua o seu valor pela sua chave do Google AI Studio.</li>
+                </ol>
+                <p class="mt-4 font-semibold">O site não irá funcionar até que estas chaves sejam preenchidas com os seus valores reais.</p>
+            </div>
+        `;
+        throw new Error("Configuração de API em falta. A execução foi interrompida.");
+    }
 
 
     // --- INICIALIZAÇÃO DA APLICAÇÃO (NÃO PRECISA DE ALTERAR) ---
@@ -358,7 +387,7 @@ body {
 
             const response = await fetch(apiUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application' },
                 body: JSON.stringify(payload)
             });
 
