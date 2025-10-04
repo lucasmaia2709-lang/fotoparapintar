@@ -53,15 +53,18 @@ body { font-family: 'Baloo 2', cursive; background-color: #f0f9ff; }
             <p class="text-gray-600 mt-2 text-lg">Transforme qualquer foto numa página para colorir!</p>
         </div>
 
+        <!-- PROMPT -->
         <div class="flex justify-center mb-4">
-            <input type="text" id="image-prompt" placeholder="Descreva como queres o desenho..." class="w-full sm:w-2/3 p-3 rounded-full border-2 border-gray-300 focus:ring-2 focus:ring-sky-400 outline-none text-center">
+            <input type="text" id="image-prompt" placeholder="Transforme a imagem em um livro de pintura com traços fechado em preto e branco, mantendo o obejeto ou poessoa, como foco principal e coloqueo em um cenario que faça sentido. " class="w-full sm:w-2/3 p-3 rounded-full border-2 border-gray-300 focus:ring-2 focus:ring-sky-400 outline-none text-center">
         </div>
 
+        <!-- UPLOAD -->
         <div class="flex justify-center mb-6">
             <label for="image-upload" class="bg-yellow-400 hover:bg-yellow-500 text-yellow-900 py-3 px-8 rounded-full cursor-pointer font-bold text-lg">Anexar Foto</label>
             <input type="file" id="image-upload" accept="image/*" class="hidden">
         </div>
 
+        <!-- RESULTADOS -->
         <div id="results" class="grid grid-cols-1 md:grid-cols-2 gap-8 hidden">
             <div class="text-center">
                 <h2 class="text-2xl font-semibold mb-3">A Sua Foto Original</h2>
@@ -95,9 +98,10 @@ body { font-family: 'Baloo 2', cursive; background-color: #f0f9ff; }
 </main>
 
 <script>
-// --- FRONTEND JS COMPLETO ---
-const CLOUDFLARE_WORKER_URL = 'https://Shttps://pintardesenho.lucasabreucotefis.workers.dev';
+// --- CONFIGURAÇÕES ---
+const CLOUDFLARE_WORKER_URL = 'https://pintardesenho.lucasabreucotefis.workers.dev'; // coloque aqui seu Worker
 
+// --- ELEMENTOS ---
 const authSection = document.getElementById('auth-section');
 const appContent = document.getElementById('app-content');
 const loginForm = document.getElementById('login-form');
@@ -113,19 +117,23 @@ const generatedImageContainer = document.getElementById('generated-image-contain
 const errorMessageDiv = document.getElementById('error-message');
 const generateButton = document.getElementById('generate-button');
 const promptInput = document.getElementById('image-prompt');
+const colorButton = document.getElementById('color-button');
+const colorPalette = document.getElementById('color-palette');
 
 let currentUser = null;
 let lastBase64Image = null;
+let coloringCanvas = null;
+let ctx = null;
+let selectedColor = null;
 
-// --- Inicialização ---
+// --- INIT ---
 window.addEventListener('load', () => {
     currentUser = JSON.parse(localStorage.getItem('currentUser'));
-    if(currentUser) showApp();
-    else showAuth();
+    if(currentUser) showApp(); else showAuth();
 });
 
-// --- Alternar login/registro ---
-authToggleLink.addEventListener('click', (e)=>{
+// --- LOGIN / REGISTRO ---
+authToggleLink.addEventListener('click', e=>{
     e.preventDefault();
     const isLoginVisible = !loginForm.classList.contains('hidden');
     loginForm.classList.toggle('hidden',isLoginVisible);
@@ -134,7 +142,6 @@ authToggleLink.addEventListener('click', (e)=>{
     authError.textContent='';
 });
 
-// --- Formulários ---
 registerForm.addEventListener('submit', e=>{ e.preventDefault(); handleAuth('register','register-email','register-password'); });
 loginForm.addEventListener('submit', e=>{ e.preventDefault(); handleAuth('login','login-email','login-password'); });
 
@@ -150,11 +157,7 @@ async function handleAuth(endpoint,emailId,passwordId){
         });
         const data=await res.json();
         if(!res.ok) throw new Error(data.error||`Erro no ${endpoint}`);
-        if(endpoint==='register'){
-            alert('Conta criada com sucesso! Faça login.');
-            authToggleLink.click();
-            return;
-        }
+        if(endpoint==='register'){ alert('Conta criada com sucesso! Faça login.'); authToggleLink.click(); return; }
         currentUser={email,credits:data.credits};
         localStorage.setItem('currentUser',JSON.stringify(currentUser));
         showApp();
@@ -162,112 +165,64 @@ async function handleAuth(endpoint,emailId,passwordId){
 }
 
 logoutButton.addEventListener('click', ()=>{
-    currentUser=null;
-    localStorage.removeItem('currentUser');
-    showAuth();
-    resultsSection.classList.add('hidden');
-    originalImageContainer.innerHTML='';
-    generatedImageContainer.innerHTML='<p class="text-gray-500">Aguardando a sua foto...</p>';
-    generateButton.classList.add('hidden');
-    imageUpload.value='';
-    promptInput.value='';
+    currentUser=null; localStorage.removeItem('currentUser'); showAuth();
+    resultsSection.classList.add('hidden'); originalImageContainer.innerHTML=''; generatedImageContainer.innerHTML='<p class="text-gray-500">Aguardando a sua foto...</p>';
+    generateButton.classList.add('hidden'); imageUpload.value=''; promptInput.value='';
 });
 
-// --- UPLOAD / REDIMENSIONAR ---
+// --- UPLOAD ---
 imageUpload.addEventListener('change', async ev=>{
-    const file=ev.target.files[0]; 
-    if(!file) return;
+    const file=ev.target.files[0]; if(!file) return;
     const previewUrl=await fileToBase64(file);
     originalImageContainer.innerHTML=`<img src="${previewUrl}" alt="Foto Original">`;
-    resultsSection.classList.remove('hidden');
-    generateButton.classList.remove('hidden');
+    resultsSection.classList.remove('hidden'); generateButton.classList.remove('hidden');
     generatedImageContainer.innerHTML='<p class="text-gray-500">Pronto para transformar!</p>';
-    const resized=await resizeImageFile(file,1024);
-    lastBase64Image=resized;
+    const resized=await resizeImageFile(file,1024); lastBase64Image=resized;
 });
 
-// --- BOTÃO GERAR DESENHO ---
+// --- GERAR IMAGEM ---
 generateButton.addEventListener('click', async ()=>{
     errorMessageDiv.textContent='';
     if(!currentUser){ errorMessageDiv.textContent='Faça login.'; return; }
     if(!lastBase64Image){ errorMessageDiv.textContent='Anexe uma foto.'; return; }
-    
     const promptText = promptInput.value.trim();
-    if(!promptText){ errorMessageDiv.textContent='Escreva um prompt para o desenho.'; return; }
+    if(!promptText){ errorMessageDiv.textContent='Escreva um prompt.'; return; }
 
-    const { dataUrl, mimeType } = lastBase64Image;
-    const base64data = dataUrl.split(',')[1];
+    const { dataUrl,mimeType }=lastBase64Image;
+    const base64data=dataUrl.split(',')[1];
+    const payload={imageData:base64data,mimeType,userEmail:currentUser.email,prompt:promptText};
 
-    const payload = { imageData: base64data, mimeType, userEmail: currentUser.email, prompt: promptText };
-
-    generatedImageContainer.innerHTML='<div class="loader"></div>';
-    generateButton.disabled=true;
-
+    generatedImageContainer.innerHTML='<div class="loader"></div>'; generateButton.disabled=true;
     try{
-        const resp = await fetch(`${CLOUDFLARE_WORKER_URL}/generate-image`,{
+        const resp=await fetch(`${CLOUDFLARE_WORKER_URL}/generate-image`,{
             method:'POST',
             headers:{'Content-Type':'application/json'},
             body:JSON.stringify(payload)
         });
-        const data = await resp.json();
-        if(!resp.ok) throw new Error(data.error || 'Erro ao gerar a imagem');
+        const data=await resp.json();
+        if(!resp.ok) throw new Error(data.error||'Erro ao gerar a imagem');
 
         enableColoring(data.imageBase64);
         currentUser.credits=data.credits;
         localStorage.setItem('currentUser',JSON.stringify(currentUser));
         updateCreditsDisplay();
-
     }catch(err){
         generatedImageContainer.innerHTML=`<p class="text-red-600 font-bold">${err.message}</p>`;
-    } finally{
-        generateButton.disabled=false;
-    }
+    } finally{ generateButton.disabled=false; }
 });
 
-// --- FUNÇÕES AUXILIARES ---
+// --- FUNÇÕES ---
 function showApp(){ authSection.classList.add('hidden'); appContent.classList.remove('hidden'); updateCreditsDisplay(); }
 function showAuth(){ appContent.classList.add('hidden'); authSection.classList.remove('hidden'); }
 function updateCreditsDisplay(){ creditsDisplay.textContent=currentUser?`Créditos: ${currentUser.credits}`:''; }
-
 function fileToBase64(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(file);});}
-
-async function resizeImageFile(file,maxDimension=1024){
-    const dataUrl=await fileToBase64(file);
-    return new Promise((resolve,reject)=>{
-        const img=new Image();
-        img.onload=()=>{
-            let {width,height}=img;
-            if(width>maxDimension||height>maxDimension){
-                if(width>height){ height=Math.round((height*maxDimension)/width); width=maxDimension; }
-                else{ width=Math.round((width*maxDimension)/height); height=maxDimension; }
-            }
-            const canvas=document.createElement('canvas');
-            canvas.width=width;
-            canvas.height=height;
-            const ctx=canvas.getContext('2d');
-            ctx.drawImage(img,0,0,width,height);
-            const mimeType=file.type==='image/png'?'image/png':'image/jpeg';
-            resolve({dataUrl:canvas.toDataURL(mimeType,0.92),mimeType});
-        };
-        img.onerror=reject;
-        img.src=dataUrl;
-    });
-}
+async function resizeImageFile(file,maxDimension=1024){const dataUrl=await fileToBase64(file);return new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>{let {width,height}=img;if(width>maxDimension||height>maxDimension){if(width>height){height=Math.round((height*maxDimension)/width);width=maxDimension;}else{width=Math.round((width*maxDimension)/height);height=maxDimension;}}const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,width,height);const mimeType=file.type==='image/png'?'image/png':'image/jpeg';resolve({dataUrl:canvas.toDataURL(mimeType,0.92),mimeType});};img.onerror=reject;img.src=dataUrl;});}
 
 // --- COLORIR ---
-const colorButton = document.getElementById('color-button');
-const colorPalette = document.getElementById('color-palette');
-let selectedColor=null;
-let coloringCanvas=null;
-let ctx=null;
-
 function enableColoring(base64Img){
     colorButton.classList.remove('hidden');
-    colorButton.onclick=()=>{ colorPalette.classList.toggle('hidden'); };
-    document.querySelectorAll('.color-swatch').forEach(swatch=>{
-        swatch.onclick=()=>{ selectedColor=swatch.dataset.color; colorPalette.classList.add('hidden'); };
-    });
-
+    colorButton.onclick=()=>{colorPalette.classList.toggle('hidden');};
+    document.querySelectorAll('.color-swatch').forEach(swatch=>{swatch.onclick=()=>{selectedColor=swatch.dataset.color;colorPalette.classList.add('hidden');};});
     const img=new Image();
     img.onload=()=>{
         coloringCanvas=document.createElement('canvas');
@@ -275,9 +230,7 @@ function enableColoring(base64Img){
         coloringCanvas.height=img.height;
         ctx=coloringCanvas.getContext('2d');
         ctx.drawImage(img,0,0);
-        generatedImageContainer.innerHTML='';
-        generatedImageContainer.appendChild(coloringCanvas);
-
+        generatedImageContainer.innerHTML=''; generatedImageContainer.appendChild(coloringCanvas);
         coloringCanvas.addEventListener('click', e=>{
             if(!selectedColor) return;
             const rect=coloringCanvas.getBoundingClientRect();
@@ -293,12 +246,12 @@ function floodFill(startX,startY,fillColor){
     const imgData=ctx.getImageData(0,0,coloringCanvas.width,coloringCanvas.height);
     const data=imgData.data;
     const width=coloringCanvas.width;
+    const height=coloringCanvas.height;
     const pixelStack=[[startX,startY]];
     const color=hexToRgba(fillColor);
     const targetIdx=(startY*width+startX)*4;
     const targetColor=[data[targetIdx],data[targetIdx+1],data[targetIdx+2],data[targetIdx+3]];
     if(colorsMatch(targetColor,color)) return;
-
     while(pixelStack.length){
         const [x,y]=pixelStack.pop();
         const idx=(y*width+x)*4;
@@ -307,14 +260,14 @@ function floodFill(startX,startY,fillColor){
         if(x>0) pixelStack.push([x-1,y]);
         if(x<width-1) pixelStack.push([x+1,y]);
         if(y>0) pixelStack.push([x,y-1]);
-        if(y<coloringCanvas.height-1) pixelStack.push([x,y+1]);
+        if(y<height-1) pixelStack.push([x,y+1]);
     }
     ctx.putImageData(imgData,0,0);
 }
 
 function hexToRgba(hex){let c=hex.replace('#','');return [parseInt(c.substr(0,2),16),parseInt(c.substr(2,2),16),parseInt(c.substr(4,2),16),255];}
 function colorsMatch(a,b){return a[0]===b[0] && a[1]===b[1] && a[2]===b[2] && a[3]===b[3];}
-
 </script>
+
 </body>
 </html>
