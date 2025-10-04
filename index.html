@@ -135,6 +135,7 @@ body {
 <script type="module">
     // Importações do Firebase
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
     import { 
         getAuth, 
         onAuthStateChanged, 
@@ -154,16 +155,16 @@ body {
     
     // ===================================================================================
     // PASSO 1: CONFIGURAÇÃO DO FIREBASE
-    // Cole aqui o objeto de configuração do seu projeto Firebase.
-    // Pode encontrá-lo nas Definições do Projeto > As suas apps > App da Web.
+    // O código abaixo foi adicionado com as suas chaves.
     // ===================================================================================
     const firebaseConfig = {
-        apiKey: "A_SUA_API_KEY_DO_FIREBASE",
-        authDomain: "O_SEU_PROJETO.firebaseapp.com",
-        projectId: "O_SEU_PROJETO_ID",
-        storageBucket: "O_SEU_PROJETO.appspot.com",
-        messagingSenderId: "O_SEU_SENDER_ID",
-        appId: "A_SUA_APP_ID"
+      apiKey: "AIzaSyD6Jdnkfql5Ou6Na_BI8zDF6L2a_3JRZsY",
+      authDomain: "fotoparapintar.firebaseapp.com",
+      projectId: "fotoparapintar",
+      storageBucket: "fotoparapintar.appspot.com",
+      messagingSenderId: "353615488725",
+      appId: "1:353615488725:web:91a8f3ec55106381e8645c",
+      measurementId: "G-CDVLBSL0SY"
     };
     
     // ===================================================================================
@@ -178,8 +179,8 @@ body {
 
 
     // --- INICIALIZAÇÃO DA APLICAÇÃO (NÃO PRECISA DE ALTERAR) ---
-    const appId = firebaseConfig.projectId || 'default-coloring-app';
     const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
