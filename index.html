@@ -1,495 +1,130 @@
 <!DOCTYPE html>
-
 <html lang="pt">
 
 <head>
-
 <meta charset="UTF-8" />
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
 <title>Gerador de Desenhos para Colorir</title>
-
 <script src="https://cdn.tailwindcss.com"></script>
-
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;700&display=swap" rel="stylesheet">
-
 <style>
-
-body { font-family: 'Baloo 2', cursive; background-color: #f0f9ff; }
-
-.loader { border: 4px solid #fde68a; border-top: 4px solid #38bdf8; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-.image-container img { max-height: 400px; width: auto; max-width: 100%; border-radius: 1rem; object-fit: contain; cursor: crosshair; }
-
-.color-palette { display: flex; gap: 5px; margin-top: 10px; }
-
-.color-swatch { width: 30px; height: 30px; border-radius: 0.25rem; cursor: pointer; border: 2px solid #fff; box-shadow: 0 0 2px rgba(0,0,0,0.5); }
-
+body {
+    font-family: 'Baloo 2', cursive;
+    background-color: #f0f9ff;
+}
+.loader {
+    border: 4px solid #fde68a;
+    border-top: 4px solid #38bdf8;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+.image-container img {
+    max-height: 400px;
+    width: auto;
+    max-width: 100%;
+    border-radius: 1rem;
+    object-fit: contain;
+    cursor: crosshair;
+}
+.color-palette {
+    display: flex;
+    gap: 5px;
+    margin-top: 10px;
+    justify-content: center;
+}
+.color-swatch {
+    width: 30px;
+    height: 30px;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 0 2px rgba(0,0,0,0.5);
+}
 </style>
-
 </head>
 
 <body class="flex items-center justify-center min-h-screen p-4">
-
-
-
-<main class="main-container bg-white p-6 sm:p-8 rounded-2xl shadow-2xl max-w-4xl w-full">
-
-
-
-  <div id="auth-section">
-
-    <div class="text-center">
-
-      <h1 class="text-3xl sm:text-4xl font-bold text-sky-500">Bem-vindo! ✨</h1>
-
-      <p class="text-gray-600 mt-2">Crie a sua conta ou faça login para começar.</p>
-
-      <div id="auth-form-container" class="mt-6 max-w-sm mx-auto">
-
-        <form id="login-form">
-
-          <input type="email" id="login-email" placeholder="O seu email" required class="shadow-sm border-2 rounded-full w-full py-3 px-6 text-center mb-4 focus:ring-2 focus:ring-sky-400 outline-none">
-
-          <input type="password" id="login-password" placeholder="A sua palavra-passe" required class="shadow-sm border-2 rounded-full w-full py-3 px-6 text-center mb-6 focus:ring-2 focus:ring-sky-400 outline-none">
-
-          <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-full font-bold text-lg transition-transform transform hover:scale-105">Entrar</button>
-
-        </form>
-
-        <form id="register-form" class="hidden">
-
-          <input type="email" id="register-email" placeholder="O seu email" required class="shadow-sm border-2 rounded-full w-full py-3 px-6 text-center mb-4 focus:ring-2 focus:ring-sky-400 outline-none">
-
-          <input type="password" id="register-password" placeholder="Crie uma palavra-passe" required class="shadow-sm border-2 rounded-full w-full py-3 px-6 text-center mb-6 focus:ring-2 focus:ring-sky-400 outline-none">
-
-          <button type="submit" class="w-full bg-sky-500 hover:bg-sky-600 text-white py-3 rounded-full font-bold text-lg transition-transform transform hover:scale-105">Criar Conta</button>
-
-        </form>
-
-      </div>
-
-      <p class="text-sm text-gray-500 mt-4">
-
-        <a href="#" id="auth-toggle-link" class="text-sky-600 hover:underline">Não tem uma conta? Registe-se aqui.</a>
-
-      </p>
-
-      <p id="auth-error" class="text-red-500 mt-4 font-semibold h-5"></p>
-
-    </div>
-
-  </div>
-
-
-
-  <div id="app-content" class="hidden">
-
-    <div class="text-center mb-8 relative">
-
-      <div class="absolute top-0 right-0 -mt-4 -mr-4 sm:-mt-6 sm:-mr-6">
-
-        <span id="credits-display" class="font-bold text-lg text-green-600 bg-white px-3 py-1 rounded-full shadow-md"></span>
-
-        <button id="logout-button" class="ml-2 text-gray-400 hover:text-red-500 font-bold" title="Sair">Sair</button>
-
-      </div>
-
-      <h1 class="text-3xl sm:text-4xl font-bold text-sky-600">Desenhos para Colorir! 🎨</h1>
-
-      <p class="text-gray-600 mt-2 text-lg">Transforme qualquer foto numa página para colorir!</p>
-
-    </div>
-
-
-
-    <div class="flex justify-center mb-6">
-
-      <label for="image-upload" class="bg-yellow-400 hover:bg-yellow-500 text-yellow-900 py-3 px-8 rounded-full cursor-pointer font-bold text-lg">Anexar Foto</label>
-
-      <input type="file" id="image-upload" accept="image/*" class="hidden">
-
-    </div>
-
-
-
-    <div id="results" class="grid grid-cols-1 md:grid-cols-2 gap-8 hidden">
-
-      <div class="text-center">
-
-        <h2 class="text-2xl font-semibold mb-3">A Sua Foto Original</h2>
-
-        <div id="original-image-container" class="image-container bg-sky-100 min-h-[250px] flex items-center justify-center rounded-2xl p-2 shadow-inner"></div>
-
-      </div>
-
-      <div class="text-center">
-
-        <h2 class="text-2xl font-semibold mb-3">O Seu Desenho</h2>
-
-        <div id="generated-image-container" class="image-container bg-sky-100 min-h-[250px] flex items-center justify-center rounded-2xl p-2 shadow-inner">
-
-          <p class="text-gray-500">Aguardando a sua foto...</p>
-
-        </div>
-
-        <button id="color-button" class="bg-pink-500 hover:bg-pink-600 text-white py-2 px-6 rounded-full mt-4 hidden">Colorir</button>
-
-        <div id="color-palette" class="color-palette hidden">
-
-          <div class="color-swatch" style="background-color:#f87171;" data-color="#f87171"></div>
-
-          <div class="color-swatch" style="background-color:#34d399;" data-color="#34d399"></div>
-
-          <div class="color-swatch" style="background-color:#60a5fa;" data-color="#60a5fa"></div>
-
-          <div class="color-swatch" style="background-color:#facc15;" data-color="#facc15"></div>
-
-          <div class="color-swatch" style="background-color:#a78bfa;" data-color="#a78bfa"></div>
-
-          <div class="color-swatch" style="background-color:#f472b6;" data-color="#f472b6"></div>
-
-        </div>
-
-      </div>
-
-    </div>
-
-
-
-    <div class="flex justify-center mt-8">
-
-      <button id="generate-button" class="bg-sky-600 hover:bg-sky-700 text-white py-3 px-8 rounded-full font-bold text-lg hidden">Transformar em Desenho</button>
-
-    </div>
-
-
-
-    <div id="error-message" class="text-center text-red-500 mt-4 font-semibold h-5"></div>
-
-  </div>
-
+<main class="main-container bg-white p-6 sm:p-8 rounded-2xl shadow-2xl max-w-5xl w-full">
+    <!-- AUTENTICAÇÃO -->
+    <div id="auth-section">
+        <div class="text-center">
+            <h1 class="text-3xl sm:text-4xl font-bold text-sky-500">Bem-vindo! ✨</h1>
+            <p class="text-gray-600 mt-2">Crie a sua conta ou faça login para começar.</p>
+            <div id="auth-form-container" class="mt-6 max-w-sm mx-auto">
+                <form id="login-form">
+                    <input type="email" id="login-email" placeholder="O seu email" required class="shadow-sm border-2 rounded-full w-full py-3 px-6 text-center mb-4 focus:ring-2 focus:ring-sky-400 outline-none">
+                    <input type="password" id="login-password" placeholder="A sua palavra-passe" required class="shadow-sm border-2 rounded-full w-full py-3 px-6 text-center mb-6 focus:ring-2 focus:ring-sky-400 outline-none">
+                    <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-full font-bold text-lg transition-transform transform hover:scale-105">Entrar</button>
+                </form>
+                <form id="register-form" class="hidden">
+                    <input type="email" id="register-email" placeholder="O seu email" required class="shadow-sm border-2 rounded-full w-full py-3 px-6 text-center mb-4 focus:ring-2 focus:ring-sky-400 outline-none">
+                    <input type="password" id="register-password" placeholder="Crie uma palavra-passe" required class="shadow-sm border-2 rounded-full w-full py-3 px-6 text-center mb-6 focus:ring-2 focus:ring-sky-400 outline-none">
+                    <button type="submit" class="w-full bg-sky-500 hover:bg-sky-600 text-white py-3 rounded-full font-bold text-lg transition-transform transform hover:scale-105">Criar Conta</button>
+                </form>
+            </div>
+            <p class="text-sm text-gray-500 mt-4">
+                <a href="#" id="auth-toggle-link" class="text-sky-600 hover:underline">Não tem uma conta? Registe-se aqui.</a>
+            </p>
+            <p id="auth-error" class="text-red-500 mt-4 font-semibold h-5"></p>
+        </div>
+    </div>
+
+    <!-- CONTEÚDO DO APP -->
+    <div id="app-content" class="hidden">
+        <div class="text-center mb-8 relative">
+            <div class="absolute top-0 right-0 flex items-center gap-2 sm:-mt-6 sm:-mr-6">
+                <span id="credits-display" class="font-bold text-lg text-green-600 bg-white px-3 py-1 rounded-full shadow-md"></span>
+                <button id="logout-button" class="text-gray-400 hover:text-red-500 font-bold" title="Sair">Sair</button>
+            </div>
+            <h1 class="text-3xl sm:text-4xl font-bold text-sky-600">Desenhos para Colorir! 🎨</h1>
+            <p class="text-gray-600 mt-2 text-lg">Transforme qualquer foto numa página para colorir!</p>
+        </div>
+
+        <div class="flex justify-center mb-6">
+            <label for="image-upload" class="bg-yellow-400 hover:bg-yellow-500 text-yellow-900 py-3 px-8 rounded-full cursor-pointer font-bold text-lg">Anexar Foto</label>
+            <input type="file" id="image-upload" accept="image/*" class="hidden">
+        </div>
+
+        <div id="results" class="grid grid-cols-1 md:grid-cols-2 gap-8 hidden">
+            <div class="text-center">
+                <h2 class="text-2xl font-semibold mb-3">A Sua Foto Original</h2>
+                <div id="original-image-container" class="image-container bg-sky-100 min-h-[250px] flex items-center justify-center rounded-2xl p-2 shadow-inner"></div>
+            </div>
+            <div class="text-center">
+                <h2 class="text-2xl font-semibold mb-3">O Seu Desenho</h2>
+                <div id="generated-image-container" class="image-container bg-sky-100 min-h-[250px] flex items-center justify-center rounded-2xl p-2 shadow-inner">
+                    <p class="text-gray-500">Aguardando a sua foto...</p>
+                </div>
+                <div class="flex flex-col items-center mt-4">
+                    <button id="color-button" class="bg-pink-500 hover:bg-pink-600 text-white py-2 px-6 rounded-full hidden">Colorir</button>
+                    <div id="color-palette" class="color-palette hidden mt-2">
+                        <div class="color-swatch" style="background-color:#f87171;" data-color="#f87171"></div>
+                        <div class="color-swatch" style="background-color:#34d399;" data-color="#34d399"></div>
+                        <div class="color-swatch" style="background-color:#60a5fa;" data-color="#60a5fa"></div>
+                        <div class="color-swatch" style="background-color:#facc15;" data-color="#facc15"></div>
+                        <div class="color-swatch" style="background-color:#a78bfa;" data-color="#a78bfa"></div>
+                        <div class="color-swatch" style="background-color:#f472b6;" data-color="#f472b6"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex justify-center mt-8">
+            <button id="generate-button" class="bg-sky-600 hover:bg-sky-700 text-white py-3 px-8 rounded-full font-bold text-lg hidden">Transformar em Desenho</button>
+        </div>
+
+        <div id="error-message" class="text-center text-red-500 mt-4 font-semibold h-5"></div>
+    </div>
 </main>
 
-
-
 <script>
-
-const CLOUDFLARE_WORKER_URL = 'https://fotoparapintar.lucasabreucotefis.workers.dev';
-
-
-
-// --- LOGIN / REGISTO / LOGOUT ---
-
-const authSection = document.getElementById('auth-section');
-
-const appContent = document.getElementById('app-content');
-
-const loginForm = document.getElementById('login-form');
-
-const registerForm = document.getElementById('register-form');
-
-const authToggleLink = document.getElementById('auth-toggle-link');
-
-const authError = document.getElementById('auth-error');
-
-const logoutButton = document.getElementById('logout-button');
-
-const creditsDisplay = document.getElementById('credits-display');
-
-const imageUpload = document.getElementById('image-upload');
-
-const resultsSection = document.getElementById('results');
-
-const originalImageContainer = document.getElementById('original-image-container');
-
-const generatedImageContainer = document.getElementById('generated-image-container');
-
-const errorMessageDiv = document.getElementById('error-message');
-
-const generateButton = document.getElementById('generate-button');
-
-
-
-let currentUser = null;
-
-let lastBase64Image = null;
-
-
-
-window.addEventListener('load', () => {
-
-  currentUser = JSON.parse(localStorage.getItem('currentUser'));
-
-  if(currentUser) showApp(); else showAuth();
-
-});
-
-
-
-authToggleLink.addEventListener('click', (e)=>{
-
-  e.preventDefault();
-
-  const isLoginVisible = !loginForm.classList.contains('hidden');
-
-  loginForm.classList.toggle('hidden',isLoginVisible);
-
-  registerForm.classList.toggle('hidden',!isLoginVisible);
-
-  authToggleLink.textContent = isLoginVisible?'Já tem uma conta? Entre aqui.':'Não tem uma conta? Registe-se aqui.';
-
-  authError.textContent='';
-
-});
-
-
-
-registerForm.addEventListener('submit', e=>{ e.preventDefault(); handleAuth('register','register-email','register-password'); });
-
-loginForm.addEventListener('submit', e=>{ e.preventDefault(); handleAuth('login','login-email','login-password'); });
-
-
-
-async function handleAuth(endpoint,emailId,passwordId){
-
-  authError.textContent='';
-
-  const email=document.getElementById(emailId).value.trim();
-
-  const password=document.getElementById(passwordId).value;
-
-  try{
-
-    const res=await fetch(`${CLOUDFLARE_WORKER_URL}/${endpoint}`,{
-
-      method:'POST',
-
-      headers:{'Content-Type':'application/json'},
-
-      body:JSON.stringify({email,password})
-
-    });
-
-    const data=await res.json();
-
-    if(!res.ok) throw new Error(data.error||`Erro no ${endpoint}`);
-
-    if(endpoint==='register'){ alert('Conta criada com sucesso! Faça login.'); authToggleLink.click(); return; }
-
-    currentUser={email,credits:data.credits};
-
-    localStorage.setItem('currentUser',JSON.stringify(currentUser));
-
-    showApp();
-
-  }catch(err){ authError.textContent=err.message; }
-
-}
-
-
-
-logoutButton.addEventListener('click', ()=>{
-
-  currentUser=null; localStorage.removeItem('currentUser'); showAuth();
-
-  resultsSection.classList.add('hidden'); originalImageContainer.innerHTML=''; generatedImageContainer.innerHTML='<p class="text-gray-500">Aguardando a sua foto...</p>'; generateButton.classList.add('hidden'); imageUpload.value='';
-
-});
-
-
-
-// --- UPLOAD / REDIMENSIONAR ---
-
-imageUpload.addEventListener('change', async ev=>{
-
-  const file=ev.target.files[0]; if(!file) return;
-
-  const previewUrl=await fileToBase64(file);
-
-  originalImageContainer.innerHTML=`<img src="${previewUrl}" alt="Foto Original">`;
-
-  resultsSection.classList.remove('hidden'); generateButton.classList.remove('hidden');
-
-  generatedImageContainer.innerHTML='<p class="text-gray-500">Pronto para transformar!</p>';
-
-  const resized=await resizeImageFile(file,1024); lastBase64Image=resized;
-
-});
-
-
-
-generateButton.addEventListener('click', async ()=>{
-
-  errorMessageDiv.textContent='';
-
-  if(!currentUser){ errorMessageDiv.textContent='Faça login.'; return; }
-
-  if(!lastBase64Image){ errorMessageDiv.textContent='Anexe uma foto.'; return; }
-
-  const { dataUrl,mimeType }=lastBase64Image;
-
-  const base64data=dataUrl.split(',')[1];
-
-  const payload={imageData:base64data,mimeType,userEmail:currentUser.email};
-
-  generatedImageContainer.innerHTML='<div class="loader"></div>'; generateButton.disabled=true;
-
-  try{
-
-    const resp=await fetch(`${CLOUDFLARE_WORKER_URL}/generate-image`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-
-    const data=await resp.json();
-
-    if(!resp.ok) throw new Error(data.error||'Erro ao gerar a imagem');
-
-    // Mostrar imagem gerada
-
-    enableColoring(data.imageBase64);
-
-    currentUser.credits=data.credits;
-
-    localStorage.setItem('currentUser',JSON.stringify(currentUser));
-
-    updateCreditsDisplay();
-
-  }catch(err){ generatedImageContainer.innerHTML=`<p class="text-red-600 font-bold">${err.message}</p>`; }
-
-  finally{ generateButton.disabled=false; }
-
-});
-
-
-
-// --- FUNÇÕES ---
-
-function showApp(){ authSection.classList.add('hidden'); appContent.classList.remove('hidden'); updateCreditsDisplay(); }
-
-function showAuth(){ appContent.classList.add('hidden'); authSection.classList.remove('hidden'); }
-
-function updateCreditsDisplay(){ creditsDisplay.textContent=currentUser?`Créditos: ${currentUser.credits}`:''; }
-
-function fileToBase64(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(file);});}
-
-async function resizeImageFile(file,maxDimension=1024){const dataUrl=await fileToBase64(file);return new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>{let {width,height}=img;if(width>maxDimension||height>maxDimension){if(width>height){height=Math.round((height*maxDimension)/width);width=maxDimension;}else{width=Math.round((width*maxDimension)/height);height=maxDimension;}}const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,width,height);const mimeType=file.type==='image/png'?'image/png':'image/jpeg';resolve({dataUrl:canvas.toDataURL(mimeType,0.92),mimeType});};img.onerror=reject;img.src=dataUrl;});}
-
-
-
-// --- COLORIR ---
-
-const colorButton = document.getElementById('color-button');
-
-const colorPalette = document.getElementById('color-palette');
-
-let selectedColor=null;
-
-let coloringCanvas=null;
-
-let ctx=null;
-
-
-
-function enableColoring(base64Img){
-
-  colorButton.classList.remove('hidden');
-
-  colorButton.onclick=()=>{colorPalette.classList.toggle('hidden');};
-
-  document.querySelectorAll('.color-swatch').forEach(swatch=>{swatch.onclick=()=>{selectedColor=swatch.dataset.color;colorPalette.classList.add('hidden');};});
-
-  const img=new Image();
-
-  img.onload=()=>{
-
-    coloringCanvas=document.createElement('canvas');
-
-    coloringCanvas.width=img.width;
-
-    coloringCanvas.height=img.height;
-
-    ctx=coloringCanvas.getContext('2d');
-
-    ctx.drawImage(img,0,0);
-
-    generatedImageContainer.innerHTML=''; generatedImageContainer.appendChild(coloringCanvas);
-
-    coloringCanvas.addEventListener('click', e=>{
-
-      if(!selectedColor) return;
-
-      const rect=coloringCanvas.getBoundingClientRect();
-
-      const x=Math.floor((e.clientX-rect.left)*(coloringCanvas.width/rect.width));
-
-      const y=Math.floor((e.clientY-rect.top)*(coloringCanvas.height/rect.height));
-
-      floodFill(x,y,selectedColor);
-
-    });
-
-  };
-
-  img.src=`data:image/png;base64,${base64Img}`;
-
-}
-
-
-
-function floodFill(startX,startY,fillColor){
-
-  const imgData=ctx.getImageData(0,0,coloringCanvas.width,coloringCanvas.height);
-
-  const data=imgData.data;
-
-  const width=coloringCanvas.width;
-
-  const height=coloringCanvas.height;
-
-  const pixelStack=[[startX,startY]];
-
-  const color=hexToRgba(fillColor);
-
-  const targetIdx=(startY*width+startX)*4;
-
-  const targetColor=[data[targetIdx],data[targetIdx+1],data[targetIdx+2],data[targetIdx+3]];
-
-  if(colorsMatch(targetColor,color)) return;
-
-  while(pixelStack.length){
-
-    const [x,y]=pixelStack.pop();
-
-    const idx=(y*width+x)*4;
-
-    if(!colorsMatch([data[idx],data[idx+1],data[idx+2],data[idx+3]],targetColor)) continue;
-
-    data[idx]=color[0]; data[idx+1]=color[1]; data[idx+2]=color[2]; data[idx+3]=color[3];
-
-    if(x>0) pixelStack.push([x-1,y]);
-
-    if(x<width-1) pixelStack.push([x+1,y]);
-
-    if(y>0) pixelStack.push([x,y-1]);
-
-    if(y<height-1) pixelStack.push([x,y+1]);
-
-  }
-
-  ctx.putImageData(imgData,0,0);
-
-}
-
-
-
-function hexToRgba(hex){let c=hex.replace('#','');return [parseInt(c.substr(0,2),16),parseInt(c.substr(2,2),16),parseInt(c.substr(4,2),16),255];}
-
-function colorsMatch(a,b){return a[0]===b[0] && a[1]===b[1] && a[2]===b[2] && a[3]===b[3];}
-
+// Coloca aqui todo o teu código JavaScript existente
 </script>
-
 </body>
-
 </html>
