@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="pt">
 
 <head>
@@ -24,12 +24,14 @@ body {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
-.image-container img {
+.image-container img, .image-container canvas {
     max-height: 400px;
     width: auto;
     max-width: 100%;
     border-radius: 1rem;
     object-fit: contain;
+}
+.image-container canvas {
     cursor: crosshair;
 }
 .color-palette {
@@ -45,6 +47,11 @@ body {
     cursor: pointer;
     border: 2px solid #fff;
     box-shadow: 0 0 2px rgba(0,0,0,0.5);
+    transition: transform 0.2s;
+}
+.color-swatch.selected {
+    transform: scale(1.2);
+    border-color: #38bdf8;
 }
 </style>
 </head>
@@ -78,16 +85,16 @@ body {
     <!-- CONTEÚDO DO APP -->
     <div id="app-content" class="hidden">
         <div class="text-center mb-8 relative">
-            <div class="absolute top-0 right-0 flex items-center gap-2 sm:-mt-6 sm:-mr-6">
-                <span id="credits-display" class="font-bold text-lg text-green-600 bg-white px-3 py-1 rounded-full shadow-md"></span>
-                <button id="logout-button" class="text-gray-400 hover:text-red-500 font-bold" title="Sair">Sair</button>
+            <div class="absolute top-0 right-0 flex items-center gap-4">
+                 <span id="credits-display" class="font-bold text-lg text-green-600 bg-white px-3 py-1 rounded-full shadow-md">Créditos: 0</span>
+                <button id="logout-button" class="text-gray-500 hover:text-red-600 font-bold text-2xl" title="Sair">&times;</button>
             </div>
             <h1 class="text-3xl sm:text-4xl font-bold text-sky-600">Desenhos para Colorir! 🎨</h1>
             <p class="text-gray-600 mt-2 text-lg">Transforme qualquer foto numa página para colorir!</p>
         </div>
 
         <div class="flex justify-center mb-6">
-            <label for="image-upload" class="bg-yellow-400 hover:bg-yellow-500 text-yellow-900 py-3 px-8 rounded-full cursor-pointer font-bold text-lg">Anexar Foto</label>
+            <label for="image-upload" class="bg-yellow-400 hover:bg-yellow-500 text-yellow-900 py-3 px-8 rounded-full cursor-pointer font-bold text-lg transition-transform transform hover:scale-105">Anexar Foto</label>
             <input type="file" id="image-upload" accept="image/*" class="hidden">
         </div>
 
@@ -102,29 +109,391 @@ body {
                     <p class="text-gray-500">Aguardando a sua foto...</p>
                 </div>
                 <div class="flex flex-col items-center mt-4">
-                    <button id="color-button" class="bg-pink-500 hover:bg-pink-600 text-white py-2 px-6 rounded-full hidden">Colorir</button>
+                    <button id="color-button" class="bg-pink-500 hover:bg-pink-600 text-white py-2 px-6 rounded-full hidden transition-transform transform hover:scale-105">Colorir!</button>
                     <div id="color-palette" class="color-palette hidden mt-2">
                         <div class="color-swatch" style="background-color:#f87171;" data-color="#f87171"></div>
-                        <div class="color-swatch" style="background-color:#34d399;" data-color="#34d399"></div>
-                        <div class="color-swatch" style="background-color:#60a5fa;" data-color="#60a5fa"></div>
+                        <div class="color-swatch" style="background-color:#fb923c;" data-color="#fb923c"></div>
                         <div class="color-swatch" style="background-color:#facc15;" data-color="#facc15"></div>
+                        <div class="color-swatch" style="background-color:#4ade80;" data-color="#4ade80"></div>
+                        <div class="color-swatch" style="background-color:#60a5fa;" data-color="#60a5fa"></div>
                         <div class="color-swatch" style="background-color:#a78bfa;" data-color="#a78bfa"></div>
                         <div class="color-swatch" style="background-color:#f472b6;" data-color="#f472b6"></div>
+                         <div class="color-swatch" style="background-color:#ffffff; border: 1px solid #ccc;" data-color="#ffffff"></div>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="flex justify-center mt-8">
-            <button id="generate-button" class="bg-sky-600 hover:bg-sky-700 text-white py-3 px-8 rounded-full font-bold text-lg hidden">Transformar em Desenho</button>
+            <button id="generate-button" class="bg-sky-600 hover:bg-sky-700 text-white py-3 px-8 rounded-full font-bold text-lg hidden transition-transform transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed">Transformar em Desenho</button>
         </div>
 
         <div id="error-message" class="text-center text-red-500 mt-4 font-semibold h-5"></div>
     </div>
 </main>
 
-<script>
-// Coloca aqui todo o teu código JavaScript existente
+<script type="module">
+    // Importações do Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { 
+        getAuth, 
+        onAuthStateChanged, 
+        createUserWithEmailAndPassword, 
+        signInWithEmailAndPassword, 
+        signOut,
+        signInAnonymously
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { 
+        getFirestore, 
+        doc, 
+        setDoc, 
+        onSnapshot,
+        updateDoc,
+        getDoc
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    
+    // Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyD6Jdnkfql5Ou6Na_BI8zDF6L2a_3JRZsY",
+  authDomain: "fotoparapintar.firebaseapp.com",
+  projectId: "fotoparapintar",
+  storageBucket: "fotoparapintar.firebasestorage.app",
+  messagingSenderId: "353615488725",
+  appId: "1:353615488725:web:91a8f3ec55106381e8645c",
+  measurementId: "G-CDVLBSL0SY"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+
+    const firebaseConfig = {
+        apiKey: "A_SUA_API_KEY_DO_FIREBASE",
+        authDomain: "O_SEU_PROJETO.firebaseapp.com",
+        projectId: "O_SEU_PROJETO_ID",
+        storageBucket: "O_SEU_PROJETO.appspot.com",
+        messagingSenderId: "O_SEU_SENDER_ID",
+        appId: "A_SUA_APP_ID"
+    };
+    
+    // ===================================================================================
+    // PASSO 2: CHAVE DE API DO GEMINI
+    // Cole aqui a sua chave de API do Google AI Studio (Gemini).
+    // ATENÇÃO: Expor esta chave no código do lado do cliente é um RISCO DE SEGURANÇA.
+    // Qualquer pessoa pode ver a sua chave e usá-la. Para um projeto pessoal ou de 
+    // demonstração, isto pode ser aceitável, mas para um projeto em produção,
+    // utilize uma função de servidor (serverless function) para proteger a chave.
+    // ===================================================================================
+    const GEMINI_API_KEY = "AIzaSyBo90fWoREhClB8W3fuI4mD8_eEDrPYrKo";
+
+
+    // --- INICIALIZAÇÃO DA APLICAÇÃO (NÃO PRECISA DE ALTERAR) ---
+    const appId = firebaseConfig.projectId || 'default-coloring-app';
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // Variáveis de estado
+    let currentUser = null;
+    let userCredits = 0;
+    let originalImageBase64 = null;
+    let currentColor = '#f87171';
+
+    // Elementos do DOM
+    const authSection = document.getElementById('auth-section');
+    const appContent = document.getElementById('app-content');
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    const authToggleLink = document.getElementById('auth-toggle-link');
+    const authError = document.getElementById('auth-error');
+    const logoutButton = document.getElementById('logout-button');
+    const creditsDisplay = document.getElementById('credits-display');
+    const imageUpload = document.getElementById('image-upload');
+    const resultsDiv = document.getElementById('results');
+    const originalImageContainer = document.getElementById('original-image-container');
+    const generatedImageContainer = document.getElementById('generated-image-container');
+    const generateButton = document.getElementById('generate-button');
+    const errorMessage = document.getElementById('error-message');
+    const colorButton = document.getElementById('color-button');
+    const colorPalette = document.getElementById('color-palette');
+
+    // --- LÓGICA DE AUTENTICAÇÃO ---
+
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            currentUser = user;
+            listenToUserData(user.uid);
+            authSection.classList.add('hidden');
+            appContent.classList.remove('hidden');
+        } else {
+            currentUser = null;
+            authSection.classList.remove('hidden');
+            appContent.classList.add('hidden');
+            // Tenta fazer login anónimo se o utilizador não estiver logado
+            try {
+                await signInAnonymously(auth);
+            } catch(error) {
+                console.error("Falha no login anónimo:", error);
+                authError.textContent = "Não foi possível iniciar a sessão. Verifique as suas definições.";
+            }
+        }
+    });
+
+    authToggleLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        loginForm.classList.toggle('hidden');
+        registerForm.classList.toggle('hidden');
+        if (registerForm.classList.contains('hidden')) {
+            authToggleLink.textContent = 'Não tem uma conta? Registe-se aqui.';
+        } else {
+            authToggleLink.textContent = 'Já tem uma conta? Entre aqui.';
+        }
+        authError.textContent = '';
+    });
+
+    registerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('register-email').value;
+        const password = document.getElementById('register-password').value;
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            await setupNewUser(userCredential.user);
+        } catch (error) {
+            authError.textContent = 'Erro ao registar: ' + error.message;
+        }
+    });
+
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+        } catch (error) {
+            authError.textContent = 'Erro ao entrar: ' + error.message;
+        }
+    });
+
+    logoutButton.addEventListener('click', async () => {
+        try {
+            await signOut(auth);
+        } catch (error) {
+            console.error("Erro ao sair:", error);
+        }
+    });
+
+    // --- LÓGICA DO FIRESTORE ---
+
+    async function setupNewUser(user) {
+        const userRef = doc(db, `users/${user.uid}`);
+        await setDoc(userRef, { credits: 5, email: user.email });
+    }
+
+    function listenToUserData(userId) {
+        const userRef = doc(db, `users/${userId}`);
+        onSnapshot(userRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                userCredits = data.credits !== undefined ? data.credits : 0;
+                creditsDisplay.textContent = `Créditos: ${userCredits}`;
+            } else {
+                 setupNewUser({uid: userId, email: "Anónimo"});
+            }
+        });
+    }
+
+    // --- LÓGICA DA APLICAÇÃO ---
+    
+    imageUpload.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            originalImageBase64 = event.target.result;
+            originalImageContainer.innerHTML = `<img src="${originalImageBase64}" alt="Sua foto original">`;
+            generatedImageContainer.innerHTML = `<p class="text-gray-500">Pronto para transformar!</p>`;
+            resultsDiv.classList.remove('hidden');
+            generateButton.classList.remove('hidden');
+            colorButton.classList.add('hidden');
+            colorPalette.classList.add('hidden');
+            errorMessage.textContent = '';
+        };
+        reader.readAsDataURL(file);
+    });
+
+    generateButton.addEventListener('click', async () => {
+        if (!originalImageBase64 || !currentUser) {
+            errorMessage.textContent = 'Por favor, anexe uma imagem primeiro.';
+            return;
+        }
+        
+        const userRefCheck = doc(db, `users/${currentUser.uid}`);
+        const docSnap = await getDoc(userRefCheck);
+
+        if (!docSnap.exists() || docSnap.data().credits <= 0) {
+             errorMessage.textContent = 'Não tem créditos suficientes para gerar um desenho.';
+             return;
+        }
+        
+        generateButton.disabled = true;
+        generateButton.textContent = 'A transformar...';
+        generatedImageContainer.innerHTML = '<div class="loader"></div>';
+        errorMessage.textContent = '';
+
+        try {
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${GEMINI_API_KEY}`;
+            
+            const base64Data = originalImageBase64.split(',')[1];
+            const mimeType = originalImageBase64.match(/data:(.*);base64/)[1];
+
+            const payload = {
+                contents: [{
+                    parts: [
+                        { text: "Transforme esta imagem numa página de livro de colorir. O resultado deve ter contornos pretos, limpos e simples, sobre um fundo totalmente branco. Não adicione nenhuma cor." },
+                        { inlineData: { mimeType: mimeType, data: base64Data } }
+                    ]
+                }],
+                generationConfig: {
+                    responseModalities: ['IMAGE']
+                },
+            };
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error?.message || 'A API retornou um erro.');
+            }
+
+            const result = await response.json();
+            const generatedBase64 = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+            
+            if (generatedBase64) {
+                const imageUrl = `data:image/png;base64,${generatedBase64}`;
+                const img = new Image();
+                img.onload = () => {
+                    setupCanvasForColoring(img);
+                };
+                img.src = imageUrl;
+                
+                const userRef = doc(db, `users/${currentUser.uid}`);
+                await updateDoc(userRef, { credits: userCredits - 1 });
+
+            } else {
+                throw new Error('A resposta da API não continha uma imagem.');
+            }
+
+        } catch (error) {
+            errorMessage.textContent = `Ocorreu um erro: ${error.message}`;
+            generatedImageContainer.innerHTML = '<p class="text-red-500">Falha ao gerar o desenho.</p>';
+        } finally {
+            generateButton.disabled = false;
+            generateButton.textContent = 'Transformar em Desenho';
+        }
+    });
+    
+    function setupCanvasForColoring(img) {
+         const canvas = document.createElement('canvas');
+         const ctx = canvas.getContext('2d', { willReadFrequently: true });
+         canvas.width = img.width;
+         canvas.height = img.height;
+         ctx.drawImage(img, 0, 0);
+         generatedImageContainer.innerHTML = '';
+         generatedImageContainer.appendChild(canvas);
+         colorButton.classList.remove('hidden');
+         
+         canvas.addEventListener('click', (e) => {
+             const rect = canvas.getBoundingClientRect();
+             const scaleX = canvas.width / rect.width;
+             const scaleY = canvas.height / rect.height;
+             const x = Math.floor((e.clientX - rect.left) * scaleX);
+             const y = Math.floor((e.clientY - rect.top) * scaleY);
+             floodFill(ctx, x, y, hexToRgb(currentColor));
+         });
+    }
+
+    colorButton.addEventListener('click', () => {
+        colorPalette.classList.toggle('hidden');
+    });
+
+    colorPalette.addEventListener('click', (e) => {
+        if (e.target.classList.contains('color-swatch')) {
+            currentColor = e.target.dataset.color;
+            document.querySelectorAll('.color-swatch').forEach(sw => sw.classList.remove('selected'));
+            e.target.classList.add('selected');
+        }
+    });
+    
+    document.querySelector('.color-swatch').classList.add('selected');
+
+
+    // --- LÓGICA DE COLORIR (FLOOD FILL) ---
+
+    function hexToRgb(hex) {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : null;
+    }
+
+    function floodFill(ctx, x, y, fillColor) {
+        const canvas = ctx.canvas;
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        const targetColor = getPixel(data, canvas.width, x, y);
+
+        if (colorsMatch(targetColor, [fillColor.r, fillColor.g, fillColor.b, 255])) {
+            return;
+        }
+
+        const stack = [[x, y]];
+        while (stack.length) {
+            const [curX, curY] = stack.pop();
+
+            if (curX < 0 || curX >= canvas.width || curY < 0 || curY >= canvas.height) continue;
+
+            const currentColor = getPixel(data, canvas.width, curX, curY);
+
+            if (colorsMatch(currentColor, targetColor)) {
+                setPixel(data, canvas.width, curX, curY, fillColor);
+                stack.push([curX + 1, curY]);
+                stack.push([curX - 1, curY]);
+                stack.push([curX, curY + 1]);
+                stack.push([curX, curY - 1]);
+            }
+        }
+        ctx.putImageData(imageData, 0, 0);
+    }
+    
+    function getPixel(data, width, x, y) {
+        const index = (y * width + x) * 4;
+        return [data[index], data[index + 1], data[index + 2], data[index + 3]];
+    }
+
+    function setPixel(data, width, x, y, color) {
+        const index = (y * width + x) * 4;
+        data[index] = color.r;
+        data[index + 1] = color.g;
+        data[index + 2] = color.b;
+        data[index + 3] = 255;
+    }
+
+    function colorsMatch(c1, c2) {
+        const tolerance = 32;
+        return Math.abs(c1[0] - c2[0]) < tolerance && Math.abs(c1[1] - c2[1]) < tolerance && Math.abs(c1[2] - c2[2]) < tolerance && Math.abs(c1[3] - c2[3]) < tolerance;
+    }
+
 </script>
 </body>
 </html>
+
