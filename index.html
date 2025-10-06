@@ -1,4 +1,4 @@
-
+<!DOCTYPE html>
 <html lang="pt">
 <head>
   <meta charset="UTF-8" />
@@ -9,11 +9,11 @@
   <style>
     body { 
       font-family: 'Baloo 2', cursive; 
-      background-color: #f0f9ff; /* Azul céu muito claro */
+      background-color: #f0f9ff;
     }
     .loader {
-      border: 4px solid #fde68a; /* Amarelo claro */
-      border-top: 4px solid #38bdf8; /* Azul céu */
+      border: 4px solid #fde68a;
+      border-top: 4px solid #38bdf8;
       border-radius: 50%;
       width: 40px;
       height: 40px;
@@ -23,7 +23,7 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-    .image-container img {
+    .image-container img, .image-container canvas {
       max-height: 400px;
       width: auto;
       max-width: 100%;
@@ -31,28 +31,94 @@
       object-fit: contain;
     }
     .main-container {
-        transition: all 0.5s ease-in-out;
+      transition: all 0.5s ease-in-out;
+    }
+    /* --- NOVOS ESTILOS PARA A TELA DE PINTURA --- */
+    #paint-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease-in-out;
+    }
+    #paint-modal.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    #paint-canvas {
+      max-width: 90vw;
+      max-height: 80vh;
+      cursor: crosshair;
+      background-color: white;
+      border-radius: 1rem;
+      box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+    }
+    .paint-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem;
+      background-color: #fff;
+      border-radius: 99px;
+      margin-bottom: 1rem;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+    .color-picker-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: bold;
+        color: #334155;
+    }
+    input[type="color"] {
+        -webkit-appearance: none;
+        width: 40px;
+        height: 40px;
+        border: none;
+        background: none;
+        border-radius: 50%;
+        overflow: hidden;
+        cursor: pointer;
+    }
+    input[type="color"]::-webkit-color-swatch-wrapper {
+        padding: 0;
+    }
+    input[type="color"]::-webkit-color-swatch {
+        border: 2px solid #e2e8f0;
+        border-radius: 50%;
+    }
+    body.modal-open {
+      overflow: hidden;
     }
   </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
 
+  <!-- O CONTEÚDO PRINCIPAL NÃO MUDA -->
   <main class="main-container bg-white p-6 sm:p-8 rounded-2xl shadow-2xl max-w-4xl w-full">
     <!-- SECÇÃO DE AUTENTICAÇÃO -->
     <div id="auth-section">
-      <div class="text-center">
+      <!-- ... (código de autenticação inalterado) ... -->
+       <div class="text-center">
         <h1 class="text-3xl sm:text-4xl font-bold text-sky-500">Bem-vindo! ✨</h1>
         <p class="text-gray-600 mt-2">Crie a sua conta ou faça login para começar.</p>
         
         <div id="auth-form-container" class="mt-6 max-w-sm mx-auto">
-          <!-- Formulário de Login -->
           <form id="login-form">
             <input type="email" id="login-email" placeholder="O seu email" required class="shadow-sm border-2 rounded-full w-full py-3 px-6 text-center mb-4 focus:ring-2 focus:ring-sky-400 outline-none">
             <input type="password" id="login-password" placeholder="A sua palavra-passe" required class="shadow-sm border-2 rounded-full w-full py-3 px-6 text-center mb-6 focus:ring-2 focus:ring-sky-400 outline-none">
             <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-full font-bold text-lg transition-transform transform hover:scale-105">Entrar</button>
           </form>
 
-          <!-- Formulário de Registo (escondido por defeito) -->
           <form id="register-form" class="hidden">
             <input type="email" id="register-email" placeholder="O seu email" required class="shadow-sm border-2 rounded-full w-full py-3 px-6 text-center mb-4 focus:ring-2 focus:ring-sky-400 outline-none">
             <input type="password" id="register-password" placeholder="Crie uma palavra-passe" required class="shadow-sm border-2 rounded-full w-full py-3 px-6 text-center mb-6 focus:ring-2 focus:ring-sky-400 outline-none">
@@ -67,7 +133,7 @@
       </div>
     </div>
 
-    <!-- CONTEÚDO PRINCIPAL DA APLICAÇÃO (escondido por defeito) -->
+    <!-- CONTEÚDO PRINCIPAL DA APLICAÇÃO -->
     <div id="app-content" class="hidden">
       <div class="text-center mb-8 relative">
         <div class="absolute top-0 right-0 -mt-4 -mr-4 sm:-mt-6 sm:-mr-6">
@@ -97,6 +163,11 @@
           <div id="generated-image-container" class="image-container bg-sky-100 min-h-[250px] flex items-center justify-center rounded-2xl p-2 shadow-inner">
             <p class="text-gray-500">Aguardando a sua foto...</p>
           </div>
+           <!-- NOVOS BOTÕES: SALVAR E PINTAR -->
+          <div id="action-buttons" class="mt-4 flex justify-center gap-4 hidden">
+            <button id="save-button" class="bg-green-500 hover:bg-green-600 text-white py-2 px-6 rounded-full font-bold transition-transform transform hover:scale-105">Salvar</button>
+            <button id="paint-button" class="bg-purple-500 hover:bg-purple-600 text-white py-2 px-6 rounded-full font-bold transition-transform transform hover:scale-105">Pintar</button>
+          </div>
         </div>
       </div>
 
@@ -110,11 +181,24 @@
     </div>
   </main>
 
+  <!-- NOVA SECÇÃO: TELA DE PINTURA (MODAL) -->
+  <div id="paint-modal">
+    <div class="paint-toolbar">
+       <div class="color-picker-wrapper">
+         <span>Cor:</span>
+         <input type="color" id="color-picker" value="#ff6347"> <!-- Tomate como cor inicial -->
+       </div>
+       <button id="download-painted-button" class="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-full font-bold text-sm">Salvar Pintura</button>
+       <button id="close-paint-modal" class="bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-4 rounded-full font-bold text-sm">Fechar</button>
+    </div>
+    <canvas id="paint-canvas"></canvas>
+  </div>
+
 <script>
   // IMPORTANTE: O URL do seu worker já está configurado
   const CLOUDFLARE_WORKER_URL = 'https://fotoparapintar.lucasabreucotefis.workers.dev';
 
-  // --- Seleção de Elementos ---
+  // --- Seleção de Elementos (com novos elementos) ---
   const authSection = document.getElementById('auth-section');
   const appContent = document.getElementById('app-content');
   const loginForm = document.getElementById('login-form');
@@ -130,12 +214,21 @@
   const errorMessageDiv = document.getElementById('error-message');
   const generateButton = document.getElementById('generate-button');
 
+  // Novos elementos
+  const actionButtonsContainer = document.getElementById('action-buttons');
+  const saveButton = document.getElementById('save-button');
+  const paintButton = document.getElementById('paint-button');
+  const paintModal = document.getElementById('paint-modal');
+  const paintCanvas = document.getElementById('paint-canvas');
+  const colorPicker = document.getElementById('color-picker');
+  const closePaintModalButton = document.getElementById('close-paint-modal');
+  const downloadPaintedButton = document.getElementById('download-painted-button');
+
   let currentUser = null;
-  let lastBase64Image = null;
+  let lastBase64Image = null; // para gerar
+  let generatedImageDataUrl = null; // para salvar e pintar
 
-  // --- Lógica Principal ---
-
-  // Ao carregar a página, verifica se o utilizador já está "logado"
+  // --- Lógica de Autenticação e UI Principal (inalterada) ---
   window.addEventListener('load', () => {
     currentUser = JSON.parse(localStorage.getItem('currentUser'));
     if (currentUser) {
@@ -145,7 +238,6 @@
     }
   });
 
-  // Alterna entre os formulários de login e registo
   authToggleLink.addEventListener('click', (e) => {
     e.preventDefault();
     const isLoginVisible = !loginForm.classList.contains('hidden');
@@ -157,19 +249,16 @@
     authError.textContent = '';
   });
 
-  // Submissão do formulário de registo
-  registerForm.addEventListener('submit', async (e) => {
+  registerForm.addEventListener('submit', (e) => {
     e.preventDefault();
     handleAuthRequest('register', 'register-email', 'register-password');
   });
 
-  // Submissão do formulário de login
-  loginForm.addEventListener('submit', async (e) => {
+  loginForm.addEventListener('submit', (e) => {
     e.preventDefault();
     handleAuthRequest('login', 'login-email', 'login-password');
   });
   
-  // Função genérica para tratar registo e login
   async function handleAuthRequest(endpoint, emailId, passwordId) {
       authError.textContent = '';
       const email = document.getElementById(emailId).value.trim();
@@ -186,8 +275,8 @@
 
           if (endpoint === 'register') {
               alert('Conta criada com sucesso! Por favor, faça login.');
-              authToggleLink.click(); // Volta para o ecrã de login
-          } else { // login
+              authToggleLink.click();
+          } else {
               currentUser = { email, credits: data.credits };
               localStorage.setItem('currentUser', JSON.stringify(currentUser));
               showApp();
@@ -197,26 +286,23 @@
       }
   }
 
-
-  // Logout
   logoutButton.addEventListener('click', () => {
     currentUser = null;
     localStorage.removeItem('currentUser');
     showAuth();
-    // Limpa o estado da UI
     resultsSection.classList.add('hidden');
     originalImageContainer.innerHTML = '';
     generatedImageContainer.innerHTML = '<p class="text-gray-500">Aguardando a sua foto...</p>';
     generateButton.classList.add('hidden');
-    imageUpload.value = ''; // Limpa a seleção de ficheiro
+    actionButtonsContainer.classList.add('hidden');
+    imageUpload.value = '';
   });
 
-  // Quando uma imagem é selecionada
   imageUpload.addEventListener('change', async (ev) => {
     const file = ev.target.files[0];
     if (!file) return;
 
-    // Mostra a pré-visualização da imagem original
+    actionButtonsContainer.classList.add('hidden');
     const previewUrl = await fileToBase64(file);
     originalImageContainer.innerHTML = `<img src="${previewUrl}" alt="Foto Original">`;
     resultsSection.classList.remove('hidden');
@@ -224,31 +310,23 @@
     generatedImageContainer.innerHTML = '<p class="text-gray-500">Pronto para transformar!</p>';
     errorMessageDiv.textContent = '';
 
-
-    // Redimensiona a imagem para otimizar o envio
-    const resized = await resizeImageFile(file, 1024); // Limita a 1024px
-    lastBase64Image = resized; // Guarda { dataUrl, mimeType }
+    const resized = await resizeImageFile(file, 1024);
+    lastBase64Image = resized;
   });
 
-  // Quando o botão de gerar é clicado
+  // --- LÓGICA DE GERAÇÃO (ATUALIZADA) ---
   generateButton.addEventListener('click', async () => {
     errorMessageDiv.textContent = '';
-
     if (!currentUser) { errorMessageDiv.textContent = 'Por favor, faça login.'; return; }
     if (!lastBase64Image) { errorMessageDiv.textContent = 'Por favor, anexe uma foto.'; return; }
 
     const { dataUrl, mimeType } = lastBase64Image;
     const base64data = dataUrl.split(',')[1];
+    const payload = { imageData: base64data, mimeType, userEmail: currentUser.email };
 
-    const payload = { 
-        imageData: base64data, 
-        mimeType, 
-        userEmail: currentUser.email 
-    };
-
-    // Mostra o spinner de carregamento
     generatedImageContainer.innerHTML = '<div class="loader"></div>';
     generateButton.disabled = true;
+    actionButtonsContainer.classList.add('hidden');
 
     try {
       const resp = await fetch(`${CLOUDFLARE_WORKER_URL}/generate-image`, {
@@ -258,15 +336,14 @@
       });
       const data = await resp.json();
       if (!resp.ok) {
-          // **MELHORIA**: Constrói uma mensagem de erro mais detalhada
           const errorMessage = data.details ? `${data.error} Detalhes: ${data.details}` : data.error;
           throw new Error(errorMessage || 'Ocorreu um erro ao gerar a imagem');
       }
 
-      // Mostra a imagem gerada
-      generatedImageContainer.innerHTML = `<img src="data:image/png;base64,${data.imageBase64}" alt="Desenho para Colorir">`;
+      generatedImageDataUrl = `data:image/png;base64,${data.imageBase64}`;
+      generatedImageContainer.innerHTML = `<img src="${generatedImageDataUrl}" alt="Desenho para Colorir">`;
+      actionButtonsContainer.classList.remove('hidden'); // <-- MOSTRAR BOTÕES
       
-      // Atualiza os créditos localmente
       currentUser.credits = data.credits;
       localStorage.setItem('currentUser', JSON.stringify(currentUser));
       updateCreditsDisplay();
@@ -278,9 +355,139 @@
     }
   });
 
+  // --- NOVAS FUNÇÕES: SALVAR E PINTAR ---
 
-  // --- Funções de UI ---
+  // Botão "Salvar"
+  saveButton.addEventListener('click', () => {
+    if (!generatedImageDataUrl) return;
+    const link = document.createElement('a');
+    link.href = generatedImageDataUrl;
+    link.download = 'desenho-para-colorir.png';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  });
 
+  // Botão "Pintar"
+  paintButton.addEventListener('click', () => {
+    if (!generatedImageDataUrl) return;
+    
+    const img = new Image();
+    img.onload = () => {
+      const ctx = paintCanvas.getContext('2d', { willReadFrequently: true });
+      paintCanvas.width = img.width;
+      paintCanvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+      paintModal.classList.add('visible');
+      document.body.classList.add('modal-open');
+    };
+    img.src = generatedImageDataUrl;
+  });
+
+  // Fechar a tela de pintura
+  closePaintModalButton.addEventListener('click', () => {
+    paintModal.classList.remove('visible');
+    document.body.classList.remove('modal-open');
+  });
+
+  // Salvar a pintura
+  downloadPaintedButton.addEventListener('click', () => {
+    const link = document.createElement('a');
+    link.href = paintCanvas.toDataURL('image/png');
+    link.download = 'minha-pintura.png';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  });
+
+  // Lógica de Pintura (Flood Fill) no Canvas
+  paintCanvas.addEventListener('click', (e) => {
+    const ctx = paintCanvas.getContext('2d');
+    const rect = paintCanvas.getBoundingClientRect();
+    const scaleX = paintCanvas.width / rect.width;
+    const scaleY = paintCanvas.height / rect.height;
+    
+    const x = Math.floor((e.clientX - rect.left) * scaleX);
+    const y = Math.floor((e.clientY - rect.top) * scaleY);
+    
+    const startColor = getPixelColor(ctx, x, y);
+    const fillColor = hexToRgb(colorPicker.value);
+
+    // Não faz nada se a cor de preenchimento for a mesma da área clicada
+    if (colorsMatch(startColor, fillColor)) return;
+
+    floodFill(ctx, x, y, fillColor);
+  });
+
+  // --- Funções Auxiliares para a Pintura ---
+
+  function getPixelColor(ctx, x, y) {
+    const pixel = ctx.getImageData(x, y, 1, 1).data;
+    return { r: pixel[0], g: pixel[1], b: pixel[2], a: pixel[3] };
+  }
+
+  function setPixelColor(imageData, x, y, color) {
+    const offset = (y * imageData.width + x) * 4;
+    imageData.data[offset] = color.r;
+    imageData.data[offset + 1] = color.g;
+    imageData.data[offset + 2] = color.b;
+    imageData.data[offset + 3] = color.a ?? 255;
+  }
+
+  function colorsMatch(c1, c2) {
+    // Permite uma pequena tolerância para linhas com anti-aliasing
+    const tolerance = 10;
+    return Math.abs(c1.r - c2.r) < tolerance && 
+           Math.abs(c1.g - c2.g) < tolerance && 
+           Math.abs(c1.b - c2.b) < tolerance &&
+           Math.abs(c1.a - (c2.a ?? 255)) < tolerance;
+  }
+
+  function hexToRgb(hex) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return { r, g, b, a: 255 };
+  }
+  
+  // Algoritmo de Flood Fill (não-recursivo para evitar estouro de pilha)
+  function floodFill(ctx, startX, startY, fillColor) {
+      const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+      const startColor = getPixelColor(ctx, startX, startY);
+      const width = imageData.width;
+      const height = imageData.height;
+
+      // Se a cor de início for a cor de preenchimento, não faz nada.
+      // E não pinta se a cor de início for muito escura (a linha do desenho)
+      if (colorsMatch(startColor, fillColor) || (startColor.r + startColor.g + startColor.b) < 100) {
+        return;
+      }
+
+      const pixelStack = [[startX, startY]];
+
+      while (pixelStack.length) {
+          const [x, y] = pixelStack.pop();
+          
+          const offset = (y * width + x) * 4;
+          const currentColor = { r: imageData.data[offset], g: imageData.data[offset+1], b: imageData.data[offset+2], a: imageData.data[offset+3] };
+
+          if (colorsMatch(currentColor, startColor)) {
+              imageData.data[offset] = fillColor.r;
+              imageData.data[offset + 1] = fillColor.g;
+              imageData.data[offset + 2] = fillColor.b;
+              imageData.data[offset + 3] = 255;
+              
+              if (y > 0) pixelStack.push([x, y - 1]);
+              if (y < height - 1) pixelStack.push([x, y + 1]);
+              if (x > 0) pixelStack.push([x - 1, y]);
+              if (x < width - 1) pixelStack.push([x + 1, y]);
+          }
+      }
+      ctx.putImageData(imageData, 0, 0);
+  }
+
+
+  // --- Funções de UI (inalteradas) ---
   function showApp() {
     authSection.classList.add('hidden');
     appContent.classList.remove('hidden');
@@ -296,9 +503,7 @@
     creditsDisplay.textContent = currentUser ? `Créditos: ${currentUser.credits}` : '';
   }
 
-  // --- Funções Utilitárias ---
-
-  // Converte um ficheiro para uma string Base64 (Data URL)
+  // --- Funções Utilitárias (inalteradas) ---
   function fileToBase64(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -308,7 +513,6 @@
     });
   }
 
-  // Redimensiona uma imagem no cliente antes de enviar
   async function resizeImageFile(file, maxDimension = 1024) {
     const dataUrl = await fileToBase64(file);
     return new Promise((resolve, reject) => {
@@ -330,7 +534,6 @@
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
         
-        // Mantém PNG para transparência, senão usa JPEG para ser mais leve
         const mimeType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
         const resizedDataUrl = canvas.toDataURL(mimeType, 0.92);
         resolve({ dataUrl: resizedDataUrl, mimeType });
@@ -342,4 +545,3 @@
 </script>
 </body>
 </html>
-
